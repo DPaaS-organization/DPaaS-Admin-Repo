@@ -149,9 +149,11 @@ jobs:
       # Compare with verified dependencies
       - name: Verify Dependencies
         run: |
-          jq -r '.managedDependencies | keys[]' verified-dependencies.json > managed-dependencies.txt
+          jq -r '.managedDependencies | keys[]' managed-dependencies/verified-dependencies.json > managed-dependencies.txt
+          jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+      
           comm -23 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > unverified-dependencies.txt
-
+      
           if [ -s unverified-dependencies.txt ]; then
             echo "Unverified dependencies found:"
             cat unverified-dependencies.txt
