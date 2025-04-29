@@ -140,11 +140,10 @@ jobs:
           jq -r '.components[].name' sbom.json > sbom-dependencies.txt
 
       - name: Checkout Managed Dependencies Repository
-        uses: actions/checkout@v4
-        with:
-          repository: DPaaS-organization/DPaaS-Admin-Repo
-          token: ${{ secrets.ADMIN_ACCESS_TOKEN }}
-          path: managed-dependencies
+        env:
+          TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
+       run: |
+         curl -H "Authorization: token ${TOKEN}" https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/managed-depenencies.json
           
       # Verify if only managed dependencies are used
       # Compare with verified dependencies
