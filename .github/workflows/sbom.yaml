@@ -128,7 +128,6 @@ jobs:
     needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
 
     steps:
-      # Download SBOMs from the previous job
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:
