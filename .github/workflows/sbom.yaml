@@ -142,14 +142,14 @@ jobs:
       - name: Checkout Managed Dependencies Repository
         uses: actions/checkout@v4
         with:
-          repository: DPaaS-organization/DPaaS-Admin-Repo/managed-dependencies.json
-          path: managed-dependencies.json
+          repository: DPaaS-organization/DPaaS-Admin-Repo
+          path: managed-dependencies
           
       # Verify if only managed dependencies are used
       # Compare with verified dependencies
       - name: Verify Dependencies
         run: |
-          jq -r '.managedDependencies | keys[]' managed-dependencies/verified-dependencies.json > managed-dependencies.txt
+          jq -r '.managedDependencies | keys[]' managed-dependencies/managed-dependencies.json > managed-dependencies.txt
           jq -r '.components[].name' sbom.json > sbom-dependencies.txt
       
           comm -23 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > unverified-dependencies.txt
@@ -161,7 +161,7 @@ jobs:
           else
             echo "All dependencies are verified."
           fi
-          
+                
       - name: Wrap SBOM in required JSON structure
         run: |
           SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")
