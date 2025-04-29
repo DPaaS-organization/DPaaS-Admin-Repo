@@ -142,6 +142,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
         run: |
+          mkdir -p managed-dependencies
           curl -H "Authorization: token ${TOKEN}" \
             -o managed-dependencies/managed-dependencies.json \
             https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json
