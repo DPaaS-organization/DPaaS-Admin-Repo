@@ -134,6 +134,26 @@ jobs:
         with:
           name: sboms
 
+      # Extract dependencies from the SBOM
+      - name: Extract Dependencies from SBOM
+        run: |
+          jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+
+      # Verify if only managed dependencies are used
+      # Compare with verified dependencies
+      - name: Verify Dependencies
+        run: |
+          jq -r '.managedDependencies | keys[]' verified-dependencies.json > managed-dependencies.txt
+          comm -23 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > unverified-dependencies.txt
+
+          if [ -s unverified-dependencies.txt ]; then
+            echo "Unverified dependencies found:"
+            cat unverified-dependencies.txt
+            exit 1
+          else
+            echo "All dependencies are verified."
+          fi
+          
       - name: Wrap SBOM in required JSON structure
         run: |
           SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")
