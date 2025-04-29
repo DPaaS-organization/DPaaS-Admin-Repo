@@ -152,6 +152,11 @@ jobs:
       - name: Extract Managed Dependencies
         run: |
           jq -r 'keys[]' managed-dependencies/managed-dependencies.json > managed-dependencies.txt
+
+      - name: Debug Managed Dependencies JSON
+        run: |
+          cat managed-dependencies/managed-dependencies.json
+
       
       # Verify dependencies
       - name: Verify Dependencies
