@@ -147,15 +147,15 @@ jobs:
       - name: Extract Dependencies from SBOM
         run: |
           jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+
+      - name: Debug Managed Dependencies JSON
+        run: |
+          cat managed-dependencies/managed-dependencies.json
       
       # Extract managed dependencies
       - name: Extract Managed Dependencies
         run: |
           jq -r 'keys[]' managed-dependencies/managed-dependencies.json > managed-dependencies.txt
-
-      - name: Debug Managed Dependencies JSON
-        run: |
-          cat managed-dependencies/managed-dependencies.json
 
       
       # Verify dependencies
