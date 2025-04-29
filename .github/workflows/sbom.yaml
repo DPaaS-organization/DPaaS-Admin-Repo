@@ -133,11 +133,6 @@ jobs:
         with:
           name: sbom
 
-      # Extract dependencies from the SBOM
-      - name: Extract Dependencies from SBOM
-        run: |
-          jq -r '.components[].name' sbom.json > sbom-dependencies.txt
-
       - name: Checkout Managed Dependencies Repository
         env:
           TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
@@ -148,13 +143,19 @@ jobs:
             https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json
 
           
-      # Verify if only managed dependencies are used
-      # Compare with verified dependencies
+      # Extract dependencies from the SBOM
+      - name: Extract Dependencies from SBOM
+        run: |
+          jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+      
+      # Extract managed dependencies
+      - name: Extract Managed Dependencies
+        run: |
+          jq -r 'keys[]' managed-dependencies/managed-dependencies.json > managed-dependencies.txt
+      
+      # Verify dependencies
       - name: Verify Dependencies
         run: |
-          # Extract managed dependencies
-          jq -r '.dependencies[].name' managed-dependencies/managed-dependencies.json > managed-dependencies.txt
-          
           # Compare the two lists
           if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
             echo "Some dependencies are not in the managed dependencies list."
