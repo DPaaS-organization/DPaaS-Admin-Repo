@@ -144,6 +144,7 @@ jobs:
         with:
           repository: DPaaS-organization/DPaaS-Admin-Repo
           path: managed-dependencies
+          token: ${{secrets.ADMIN_ACCESS_TOKEN}}
           
       # Verify if only managed dependencies are used
       # Compare with verified dependencies
