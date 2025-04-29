@@ -132,7 +132,7 @@ jobs:
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:
-          name: sboms
+          name: sbom
 
       # Extract dependencies from the SBOM
       - name: Extract Dependencies from SBOM
