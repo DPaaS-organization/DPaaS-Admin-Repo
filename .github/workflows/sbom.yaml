@@ -139,6 +139,12 @@ jobs:
         run: |
           jq -r '.components[].name' sbom.json > sbom-dependencies.txt
 
+      - name: Checkout Managed Dependencies Repository
+        uses: actions/checkout@v4
+        with:
+          repository: DPaaS-organization/DPaaS-Admin-Repo/managed-dependencies.json
+          path: managed-dependencies.json
+          
       # Verify if only managed dependencies are used
       # Compare with verified dependencies
       - name: Verify Dependencies
