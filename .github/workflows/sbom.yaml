@@ -142,7 +142,9 @@ jobs:
         env:
           TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
         run: |
-         curl -H "Authorization: token ${TOKEN}" https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/managed-depenencies.json
+          curl -H "Authorization: token ${TOKEN}" \
+            -o managed-dependencies.json \
+            https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json
           
       # Verify if only managed dependencies are used
       # Compare with verified dependencies
