@@ -138,11 +138,8 @@ jobs:
           TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
         run: |
           mkdir -p managed-dependencies
-          curl -H "Authorization: token ${TOKEN}" \
-            -o managed-dependencies/managed-dependencies.json \
-            https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json
+          curl -H "Authorization: token ${TOKEN}" -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json -o filename
 
-          
       # Extract dependencies from the SBOM
       - name: Extract Dependencies from SBOM
         run: |
