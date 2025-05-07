@@ -24,6 +24,8 @@ jobs:
         run: |
           # Use the SonarQube API to search for issues in the specified project
           # Authentication is done using the SONAR_TOKEN secret
+          # The SONAR_PROJECT_KEY is a unique key of the SonarQube project to specify which 
+          # project's issues to retrieve
           curl -s -u ${{ secrets.SONAR_TOKEN }} \
             "https://sonarcloud.io/api/issues/search?projectKeys=${{ secrets.SONAR_PROJECT_KEY }}" \
             | jq -c '[.issues[]]' > issues.json  # Save issues to a JSON file
