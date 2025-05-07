@@ -163,7 +163,7 @@ jobs:
       # Wrap SBOM in required JSON structure
       - name: Wrap SBOM in required JSON structure
         run: |
-          SBOM_CONTENT=$(base64 -w 0 sbom || echo "")  # Adjusted path
+          SBOM_CONTENT=$(base64 -w 0 sbom.json || echo "")  # Adjusted path
           if [ -z "$SBOM_CONTENT" ]; then
             echo "SBOM file is empty or missing."
             exit 1
