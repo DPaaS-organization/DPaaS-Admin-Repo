@@ -22,11 +22,15 @@ jobs:
       - name: Get SonarQube Issues
         id: get_issues
         run: |
+          # Use the SonarQube API to search for issues in the specified project
+          # Authentication is done using the SONAR_TOKEN secret
           curl -s -u ${{ secrets.SONAR_TOKEN }} \
             "https://sonarcloud.io/api/issues/search?projectKeys=${{ secrets.SONAR_PROJECT_KEY }}" \
             | jq -c '[.issues[]]' > issues.json  # Save issues to a JSON file
-          echo "::set-output name=issues::$(cat issues.json)"  # Set output for later steps
-
+    
+          # Set the output variable 'issues' to be used in later steps
+          echo "::set-output name=issues::$(cat issues.json)" 
+    
       # Step to create GitHub issues for each SonarQube issue found
       - name: Create GitHub Issues
         if: steps.get_issues.outputs.issues != ''
