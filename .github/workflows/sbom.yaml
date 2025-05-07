@@ -154,7 +154,7 @@ jobs:
           fi
           echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
       
-             # Submit the SBOM to the API
+      # Submit the SBOM to the API
       - name: Submit SBOM to API
         run: |
           RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
@@ -168,6 +168,18 @@ jobs:
             exit 1
           fi
           
+  verify-dependency-list:
+    runs-on: ubuntu:latest
+    needs: generate-sbom
+
+    steps:
+    
+      # Download the SBOM artifact
+      - name: Download SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+      
       # Download managed dependencies from a remote JSON file
       - name: Download managed dependencies
         run: |
@@ -202,6 +214,8 @@ jobs:
             exit 1
           fi
 
+    
+  
   fetch-scan-from-dependency-track:
     runs-on: self-hosted
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
