@@ -132,7 +132,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sbom
-
+      
+      - name: Wrap SBOM in required JSON structure
+        run: |
+          SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")
+          if [ -z "$SBOM_CONTENT" ]; then
+            echo "SBOM file is empty or missing."
+            exit 1
+          fi
+          echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
+          
       - uses: actions/checkout@v4
       - name: Download managed dependencies
         run: |
@@ -166,15 +175,6 @@ jobs:
             echo "Some dependencies are not in the managed dependencies list."
             exit 1
           fi
-                
-      - name: Wrap SBOM in required JSON structure
-        run: |
-          SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")
-          if [ -z "$SBOM_CONTENT" ]; then
-            echo "SBOM file is empty or missing."
-            exit 1
-          fi
-          echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
 
       # Submit the SBOM to the API
       - name: Submit SBOM to API
