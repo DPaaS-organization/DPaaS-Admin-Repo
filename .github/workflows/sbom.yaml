@@ -181,14 +181,11 @@ jobs:
 
     - name: Debug Managed Dependencies Download
       run: |
-        curl -H "Authorization: token ${TOKEN}" \
+        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
              -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
              -o managed-dependencies.json -vv
         echo "Downloaded file content:"
         cat managed-dependencies.json || echo "Download failed or file is empty"
-      env:
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
     # # Download managed dependencies from a remote JSON file
     # - name: Download Managed Dependencies
