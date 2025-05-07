@@ -169,7 +169,7 @@ jobs:
           fi
           
   verify-dependency-list:
-    runs-on: ubuntu:latest
+    runs-on: ubuntu-latest
     needs: generate-sbom
 
     steps:
