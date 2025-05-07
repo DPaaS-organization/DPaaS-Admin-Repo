@@ -143,7 +143,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sbom
-      
+          
+      - name: Debug SBOM Download
+        run: |
+          echo "Listing files in the current directory:"
+          ls -lh
+          echo "Listing files in the sbom directory:"
+          ls -lh sbom/
+          
+          if [ -f sbom/sbom.json ]; then
+            echo "SBOM file exists."
+            echo "Contents of sbom.json:"
+            cat sbom/sbom.json
+          else
+            echo "SBOM file does not exist."
+            exit 1
+          fi
+          
       # Wrap SBOM in required JSON structure
       - name: Wrap SBOM in required JSON structure
         run: |
