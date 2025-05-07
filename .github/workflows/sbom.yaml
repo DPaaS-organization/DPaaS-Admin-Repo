@@ -204,15 +204,15 @@ jobs:
       run: |
         cat managed-dependencies.json
 
-    # Validate the structure of the managed dependencies JSON file
-    - name: Validate JSON
-      run: |
-        jq empty managed-dependencies.json || (echo "Invalid JSON" && exit 1)
+    # # Validate the structure of the managed dependencies JSON file
+    # - name: Validate JSON
+    #   run: |
+    #     jq empty managed-dependencies.json || (echo "Invalid JSON" && exit 1)
 
-    # Extract dependencies from the SBOM
-    - name: Extract Dependencies from SBOM
+    - name: Extract Managed Dependencies
       run: |
-        jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+        jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
+
 
     # Debugging: List files and contents
     - name: Debug File Content
