@@ -142,8 +142,7 @@ jobs:
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:
-          name: sbom
-          path: sbom.json
+          name: sbom.json
           
       - name: Debug SBOM Download
         run: |
