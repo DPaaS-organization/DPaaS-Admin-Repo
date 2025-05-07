@@ -188,6 +188,11 @@ jobs:
       env:
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+
+    - name: Debug `managed-dependencies.json`
+      run: |
+        cat managed-dependencies.json
+
     # Validate the structure of the managed dependencies JSON file
     - name: Validate JSON
       run: |
