@@ -133,12 +133,14 @@ jobs:
         with:
           name: sbom
 
-      - name: Checkout Managed Dependencies Repository
-        env:
-          TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Download managed dependencies
         run: |
-          curl -H "Authorization: token ${TOKEN}" 
-                -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json -o managed-dependencies.json -vv
+          curl -H "Authorization: token ${TOKEN}" \
+               -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+               -o managed-dependencies.json -vv
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Extract dependencies from the SBOM
       - name: Extract Dependencies from SBOM
