@@ -143,23 +143,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sbom
-          
-      # - name: Debug SBOM Download
-      #   run: |
-      #     echo "Listing files in the current directory:"
-      #     ls -lh
-      #     echo "Listing files in the sbom directory:"
-      #     ls -lh sbom/
-          
-      #     if [ -f sbom/sbom.json ]; then
-      #       echo "SBOM file exists."
-      #       echo "Contents of sbom.json:"
-      #       cat sbom/sbom.json
-      #     else
-      #       echo "SBOM file does not exist."
-      #       exit 1
-      #     fi
-          
+
       # Wrap SBOM in required JSON structure
       - name: Wrap SBOM in required JSON structure
         run: |
@@ -170,42 +154,7 @@ jobs:
           fi
           echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
       
-              
-      # # Download managed dependencies from a remote JSON file
-      # - name: Download managed dependencies
-      #   run: |
-      #     curl -H "Authorization: token ${TOKEN}" \
-      #          -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
-      #          -o managed-dependencies.json -vv
-      #   env:
-      #     TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # # Extract dependencies from the SBOM
-      # - name: Extract Dependencies from SBOM
-      #   run: |
-      #     jq -r '.components[].name' sbom.json > sbom-dependencies.txt
-
-      # # Debugging: List files and contents
-      # - name: Debug File
-      #   run: |
-      #     ls -lh
-      #     cat managed-dependencies.json
-      
-      # # Extract managed dependencies from the downloaded JSON
-      # - name: Extract Managed Dependencies
-      #   run: |
-      #     jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
-
-      # # Verify that all SBOM dependencies are in the managed dependencies list
-      # - name: Verify Dependencies
-      #   run: |
-      #     # Compare the two lists
-      #     if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
-      #       echo "Some dependencies are not in the managed dependencies list."
-      #       exit 1
-      #     fi
-
-      # Submit the SBOM to the API
+             # Submit the SBOM to the API
       - name: Submit SBOM to API
         run: |
           RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
@@ -216,6 +165,40 @@ jobs:
           echo "API Response: $RESPONSE"
           if [[ "$RESPONSE" == *"error"* ]]; then
             echo "Failed to upload SBOM."
+            exit 1
+          fi
+          
+      # Download managed dependencies from a remote JSON file
+      - name: Download managed dependencies
+        run: |
+          curl -H "Authorization: token ${TOKEN}" \
+               -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+               -o managed-dependencies.json -vv
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract dependencies from the SBOM
+      - name: Extract Dependencies from SBOM
+        run: |
+          jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+
+      # Debugging: List files and contents
+      - name: Debug File
+        run: |
+          ls -lh
+          cat managed-dependencies.json
+      
+      # Extract managed dependencies from the downloaded JSON
+      - name: Extract Managed Dependencies
+        run: |
+          jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
+
+      # Verify that all SBOM dependencies are in the managed dependencies list
+      - name: Verify Dependencies
+        run: |
+          # Compare the two lists
+          if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
+            echo "Some dependencies are not in the managed dependencies list."
             exit 1
           fi
 
