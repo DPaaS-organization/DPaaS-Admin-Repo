@@ -8,74 +8,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # Checkout code from the repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Node.js (npm)
+      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '16'  # Specify the Node.js version
 
+      # Install npm dependencies if package.json has changed
       - name: Install npm dependencies
         if: hashFiles('package.json')
         run: npm install --legacy-peer-deps
 
+      # Install a specific missing npm dependency
       - name: Install missing dependencies
         if: hashFiles('package.json')
         run: npm install eslint-plugin-n@15 --save-dev
 
+      # Force install a specific TypeScript version
       - name: Force install TypeScript version
         if: hashFiles('package.json')
         run: npm install typescript@4.6.4 --save-dev --force
 
+      # Generate CycloneDX SBOM for npm
       - name: Generate CycloneDX SBOM for npm
         if: hashFiles('package.json')
         run: npx @cyclonedx/cyclonedx-npm --output-file sbom-npm.json
 
-      # Python (pip)
+      # Set up Python environment if requirements.txt or setup.py exists
       - name: Set up Python
         if: hashFiles('requirements.txt') || hashFiles('setup.py')
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.9'  # Specify the Python version
 
+      # Install pip dependencies if requirements.txt or setup.py exists
       - name: Install pip dependencies
         if: hashFiles('requirements.txt') || hashFiles('setup.py')
         run: pip install -r requirements.txt
 
+      # Generate CycloneDX SBOM for pip
       - name: Generate CycloneDX SBOM for pip
         if: hashFiles('requirements.txt') || hashFiles('setup.py')
         run: cyclonedx-py --output sbom-pip.json
 
-      # Java (Maven)
+      # Set up Java environment if pom.xml exists
       - name: Set up Java
         if: hashFiles('pom.xml')
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '11'  # Specify the Java version
           distribution: 'adopt'
 
+      # Install Maven dependencies if pom.xml exists
       - name: Install Maven dependencies
         if: hashFiles('pom.xml')
         run: mvn install
 
+      # Generate CycloneDX SBOM for Maven
       - name: Generate CycloneDX SBOM for Maven
         if: hashFiles('pom.xml')
         run: mvn cyclonedx:makeAggregateBom
 
-      # Ruby (Bundler)
+      # Set up Ruby environment if Gemfile exists
       - name: Set up Ruby
         if: hashFiles('Gemfile')
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.7'
+          ruby-version: '2.7'  # Specify the Ruby version
 
+      # Install Bundler dependencies if Gemfile exists
       - name: Install Bundler dependencies
         if: hashFiles('Gemfile')
         run: bundle install
 
+      # Generate CycloneDX SBOM for Bundler
       - name: Generate CycloneDX SBOM for Bundler
         if: hashFiles('Gemfile')
         run: cyclonedx-bundler --output sbom-bundler.json
@@ -128,21 +138,26 @@ jobs:
     needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
 
     steps:
+      # Download the SBOM artifact
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:
           name: sbom
       
+      # Wrap SBOM in required JSON structure
       - name: Wrap SBOM in required JSON structure
         run: |
-          SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")
+          SBOM_CONTENT=$(base64 -w 0 sbom-npm.json || echo "")  # Encode SBOM in base64
           if [ -z "$SBOM_CONTENT" ]; then
             echo "SBOM file is empty or missing."
             exit 1
           fi
           echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
           
+      # Checkout code again for further processing
       - uses: actions/checkout@v4
+      
+      # Download managed dependencies from a remote JSON file
       - name: Download managed dependencies
         run: |
           curl -H "Authorization: token ${TOKEN}" \
@@ -156,18 +171,18 @@ jobs:
         run: |
           jq -r '.components[].name' sbom.json > sbom-dependencies.txt
 
+      # Debugging: List files and contents
       - name: Debug File
         run: |
           ls -lh
           cat managed-dependencies.json
       
-      # Extract managed dependencies
+      # Extract managed dependencies from the downloaded JSON
       - name: Extract Managed Dependencies
         run: |
           jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
 
-      
-      # Verify dependencies
+      # Verify that all SBOM dependencies are in the managed dependencies list
       - name: Verify Dependencies
         run: |
           # Compare the two lists
@@ -195,6 +210,7 @@ jobs:
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
 
     steps:
+      # Check the status of the scan
       - name: Check Scan Status
         id: check-status
         run: |
@@ -221,6 +237,7 @@ jobs:
             fi
           done
 
+      # Fetch the scan results from the API
       - name: Fetch Scan Results
         id: fetch-results
         run: |
@@ -237,6 +254,7 @@ jobs:
 
           echo "$RESPONSE" > scan-results.json
 
+      # Create GitHub issues for findings in the scan results
       - name: Create GitHub Issues
         run: |
           ISSUES=$(jq -c '.components[] | select(.issues != null) | {title: .name, body: .issues[] | {description: .description, severity: .severity}}' scan-results.json)
