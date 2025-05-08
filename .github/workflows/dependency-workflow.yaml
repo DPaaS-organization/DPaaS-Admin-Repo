@@ -199,7 +199,7 @@ jobs:
 
     - name: Debug `managed-dependencies.json`
       run: |
-        cat managed-dependencies.json
+        cat managed-dependencies.txt
 
     # # Validate the structure of the managed dependencies JSON file
     # - name: Validate JSON
