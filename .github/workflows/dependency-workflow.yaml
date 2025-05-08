@@ -193,25 +193,10 @@ jobs:
         TOKEN: ${{ secrets.GITHUB_TOKEN }} # Or use a PAT if required
       run: |
         curl -s -X GET \
-          https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/blob/main/managed-dependencies.json \
-          -H "Authorization: token $TOKEN" \
-          -H "Content-Type: application/json" \
-          -o managed-dependencies.json
+        https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+        -H "Authorization: token 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" \
+        -H "Content-Type: application/json"  -vv -o managed-dependencies.txt
 
-    - name: Fetch File from Private Repository
-      env:
-        TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GitHub Actions token
-      run: |
-        # Define the private repository and file path
-        FILE_URL="https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/blob/main/managed-dependencies.json"
-
-        # Fetch the file using curl with the GITHUB_TOKEN for authentication
-        curl -H "Authorization: token $TOKEN" -o downloaded-file.json $FILE_URL
-
-        # Confirm the file has been fetched
-        echo "Downloaded file content:"
-        cat downloaded-file.json
-          
     - name: Debug `managed-dependencies.json`
       run: |
         cat managed-dependencies.json
@@ -221,9 +206,9 @@ jobs:
     #   run: |
     #     jq empty managed-dependencies.json || (echo "Invalid JSON" && exit 1)
 
-    - name: Extract Managed Dependencies
-      run: |
-        jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
+    # - name: Extract Managed Dependencies
+    #   run: |
+    #     jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
 
 
     # Debugging: List files and contents
