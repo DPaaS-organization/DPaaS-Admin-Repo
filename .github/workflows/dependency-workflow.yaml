@@ -197,6 +197,23 @@ jobs:
           -H "Authorization: token $TOKEN" \
           -H "Content-Type: application/json" \
           -o managed-dependencies.json
+
+      # Fetch the scan results from the API
+    - name: Fetch Scan Results
+      id: fetch-results
+      run: |
+        RESPONSE=$(curl -X GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
+        -H "X-Api-Key: odt_mFDG4LXN_xEvL6DqsDJaukONSIVaccgUE9ioBXQkf")
+
+        echo "BOM Fetch Response: $RESPONSE" # Debugging line
+
+        # Check if the response is empty or not
+        if [ -z "$RESPONSE" ]; then
+          echo "No BOM data returned."
+          exit 1
+        fi
+
+        echo "$RESPONSE" > scan-results.json
           
     - name: Debug `managed-dependencies.json`
       run: |
