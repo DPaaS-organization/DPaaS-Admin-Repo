@@ -192,7 +192,7 @@ jobs:
       run: |
         curl -s -X GET https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json") \
+            -H "Content-Type: application/json" \
             -o managed-dependencies.json -vv
 
     - name: Debug `managed-dependencies.json`
