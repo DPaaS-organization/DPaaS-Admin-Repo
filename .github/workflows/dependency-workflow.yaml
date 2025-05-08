@@ -193,7 +193,7 @@ jobs:
         TOKEN: ${{ secrets.GITHUB_TOKEN }} # Or use a PAT if required
       run: |
         curl -s -X GET \
-          https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+          https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/blob/main/managed-dependencies.json \
           -H "Authorization: token $TOKEN" \
           -H "Content-Type: application/json" \
           -o managed-dependencies.json
@@ -203,14 +203,14 @@ jobs:
         TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GitHub Actions token
       run: |
         # Define the private repository and file path
-        FILE_URL="https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json"
+        FILE_URL="https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/blob/main/managed-dependencies.json"
 
         # Fetch the file using curl with the GITHUB_TOKEN for authentication
-        curl -H "Authorization: token $TOKEN" -o downloaded-file.txt $FILE_URL
+        curl -H "Authorization: token $TOKEN" -o downloaded-file.json $FILE_URL
 
         # Confirm the file has been fetched
         echo "Downloaded file content:"
-        cat downloaded-file.txt
+        cat downloaded-file.json
           
     - name: Debug `managed-dependencies.json`
       run: |
