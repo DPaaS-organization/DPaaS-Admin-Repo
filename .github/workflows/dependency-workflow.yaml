@@ -198,22 +198,19 @@ jobs:
           -H "Content-Type: application/json" \
           -o managed-dependencies.json
 
-      # Fetch the scan results from the API
-    - name: Fetch Scan Results
-      id: fetch-results
+    - name: Fetch File from Private Repository
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the built-in GitHub Actions token
       run: |
-        RESPONSE=$(curl -X GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-        -H "X-Api-Key: odt_mFDG4LXN_xEvL6DqsDJaukONSIVaccgUE9ioBXQkf")
+        # Define the private repository and file path
+        FILE_URL="https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json"
 
-        echo "BOM Fetch Response: $RESPONSE" # Debugging line
+        # Fetch the file using curl with the GITHUB_TOKEN for authentication
+        curl -H "Authorization: token $TOKEN" -o downloaded-file.txt $FILE_URL
 
-        # Check if the response is empty or not
-        if [ -z "$RESPONSE" ]; then
-          echo "No BOM data returned."
-          exit 1
-        fi
-
-        echo "$RESPONSE" > scan-results.json
+        # Confirm the file has been fetched
+        echo "Downloaded file content:"
+        cat downloaded-file.txt
           
     - name: Debug `managed-dependencies.json`
       run: |
