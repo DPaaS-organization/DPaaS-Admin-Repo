@@ -197,7 +197,7 @@ jobs:
         -H "Authorization: token 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" \
         -H "Content-Type: application/json"  -vv -o managed-dependencies.txt
 
-    - name: Debug `managed-dependencies.json`
+    - name: Debug `managed-dependencies.txt`
       run: |
         cat managed-dependencies.txt
 
@@ -210,17 +210,10 @@ jobs:
     #   run: |
     #     jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
 
-
-    # Debugging: List files and contents
-    - name: Debug File Content
-      run: |
-        ls -lh
-        cat managed-dependencies.json
-
-    # Extract managed dependencies from the downloaded JSON
-    - name: Extract Managed Dependencies
-      run: |
-        jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
+    # # Extract managed dependencies from the downloaded JSON
+    # - name: Extract Managed Dependencies
+    #   run: |
+    #     jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
 
     # Verify that all SBOM dependencies are in the managed dependencies list
     - name: Verify Dependencies
