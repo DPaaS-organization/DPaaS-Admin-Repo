@@ -233,6 +233,7 @@ jobs:
         else
           echo "All SBOM dependencies are present in the managed dependencies list."
         fi
+        
   fetch-scan-from-dependency-track:
     runs-on: self-hosted
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
@@ -265,16 +266,17 @@ jobs:
             fi
           done
 
-      # Fetch the scan results from the API
+      # Step 2: Fetch the scan results
       - name: Fetch Scan Results
         id: fetch-results
         run: |
           RESPONSE=$(curl -X GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-          -H "X-Api-Key: odt_mFDG4LXN_xEvL6DqsDJaukONSIVaccgUE9ioBXQkf")
+          -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+          -H "Content-Type: application/json")
 
           echo "BOM Fetch Response: $RESPONSE" # Debugging line
 
-          # Check if the response is empty or not
+          # Check if the response is empty
           if [ -z "$RESPONSE" ]; then
             echo "No BOM data returned."
             exit 1
@@ -282,30 +284,31 @@ jobs:
 
           echo "$RESPONSE" > scan-results.json
 
-      # Create GitHub issues for findings in the scan results
-      - name: Parse Vulnerabilities and Create Issues
-        id: create_issues
+      # Step 3: Parse the scan results and create issues via Node.js
+      - name: Create Issues from Scan Results
         run: |
-          # Read and parse vulnerability data dynamically from a file
-          const fs = require('fs');
-          const vulnerabilities = JSON.parse(fs.readFileSync('./scan-results.json', 'utf8'));
-  
-          const { execSync } = require('child_process');
-  
+          # Write the JavaScript script dynamically into a file
+          echo 'const fs = require("fs");
+          const { execSync } = require("child_process");
+          
+          const vulnerabilities = JSON.parse(fs.readFileSync("./scan-results.json", "utf8"));
+          
           vulnerabilities.forEach(vuln => {
-            if (!vuln.analysis.isSuppressed) {
-              const issueBody = `
-                      **Package:** \`${vuln.component.name}@${vuln.component.version}\`
-                      **Vulnerability ID:** ${vuln.vulnerability.vulnId}
-                      **Description:** ${vuln.vulnerability.description}
-                      **Severity:** ${vuln.vulnerability.severity} (Rank: ${vuln.vulnerability.severityRank})
-                      **EPSS Score:** ${vuln.vulnerability.epssScore}
-                      **Reference:** [More Info](${vuln.attribution.referenceUrl})
-                      `;
-              // Create an issue using the GitHub CLI
-              const title = `Vulnerability: ${vuln.component.name}@${vuln.component.version} - ${vuln.vulnerability.vulnId}`;
-              execSync(`gh issue create --title "${title}" --body "${issueBody}"`);
-            }
-          });
+              if (!vuln.analysis.isSuppressed) {
+                  const issueBody = `
+          **Package:** ${vuln.component.name}@${vuln.component.version}
+          **Vulnerability ID:** ${vuln.vulnerability.vulnId}
+          **Description:** ${vuln.vulnerability.description}
+          **Severity:** ${vuln.vulnerability.severity} (Rank: ${vuln.vulnerability.severityRank})
+          **EPSS Score:** ${vuln.vulnerability.epssScore}
+          **Reference:** [More Info](${vuln.attribution.referenceUrl})
+          `;
+                  const title = `Vulnerability: ${vuln.component.name}@${vuln.component.version} - ${vuln.vulnerability.vulnId}`;
+                  execSync(`gh issue create --title "${title}" --body "${issueBody}"`);
+              }
+          });' > create-issues.js
+
+          # Run the script using Node.js
+          node create-issues.js
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
