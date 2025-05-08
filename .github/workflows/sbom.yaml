@@ -282,22 +282,34 @@ jobs:
           echo "$RESPONSE" > scan-results.json
 
       # Create GitHub issues for findings in the scan results
-      - name: Create GitHub Issues
+      - name: Parse scan results and create GitHub issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ISSUES=$(jq -c '.component[] | select(.issues != null) | {title: .name, body: .issues[] | {description: .description, severity: .severity}}' scan-results.json)
-          
+          SCAN_RESULTS_FILE=${{ github.event.inputs.scan-results }}
+
+          if [ ! -f "$SCAN_RESULTS_FILE" ]; then
+            echo "Scan results file not found: $SCAN_RESULTS_FILE"
+            exit 1
+          fi
+
+          ISSUES=$(jq -c '.[] | select(.vulnerability != null) | {title: .component.name, body: {description: .vulnerability.description, severity: .vulnerability.severity}}' "$SCAN_RESULTS_FILE")
+
           for ISSUE in $ISSUES; do
             TITLE=$(echo "$ISSUE" | jq -r '.title')
             BODY=$(echo "$ISSUE" | jq -r '.body.description')
             SEVERITY=$(echo "$ISSUE" | jq -r '.body.severity')
 
             RESPONSE=$(curl -X POST "https://api.github.com/repos/${{ github.repository }}/issues" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             -d "{\"title\": \"$TITLE\", \"body\": \"Severity: $SEVERITY\n\n$BODY\"}" \
             -s -w "%{http_code}" -o response.json)
 
             if [ "$RESPONSE" -ne 201 ]; then
               echo "Failed to create issue: $(cat response.json)"
+              exit 1
+            else
+              echo "Issue created successfully: $TITLE"
             fi
           done
