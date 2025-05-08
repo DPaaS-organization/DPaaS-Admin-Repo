@@ -179,14 +179,6 @@ jobs:
       with:
         name: sbom
 
-    # - name: Debug Managed Dependencies Download
-    #   run: |
-    #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-    #          -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
-    #          -o managed-dependencies.json -vv
-    #     echo "Downloaded file content:"
-    #     cat managed-dependencies.json || echo "Download failed or file is empty"
-
     # Download managed dependencies from a remote JSON file
     - name: Download Managed Dependencies
       env:
@@ -215,15 +207,32 @@ jobs:
     #   run: |
     #     jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
 
-    # Verify that all SBOM dependencies are in the managed dependencies list
+    # # Verify that all SBOM dependencies are in the managed dependencies list
+    # - name: Verify Dependencies
+    #   run: |
+    #     # Compare the two lists
+    #     if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
+    #       echo "Some dependencies are not in the managed dependencies list."
+    #       exit 1
+    #     fi
+
+    - name: Parse SBOM to Dependencies List
+      run: |
+        # Extract dependency names from the SBOM
+        jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+        echo "Parsed SBOM Dependencies:"
+        cat sbom-dependencies.txt
+
+    # Verify Dependencies
     - name: Verify Dependencies
       run: |
-        # Compare the two lists
+        # Compare the two lists using comm
         if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
-          echo "Some dependencies are not in the managed dependencies list."
+          echo "Some dependencies in the SBOM are NOT in the managed dependencies list."
           exit 1
+        else
+          echo "All SBOM dependencies are present in the managed dependencies list."
         fi
-        
   fetch-scan-from-dependency-track:
     runs-on: self-hosted
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
