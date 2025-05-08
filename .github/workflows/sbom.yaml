@@ -284,7 +284,7 @@ jobs:
       # Create GitHub issues for findings in the scan results
       - name: Create GitHub Issues
         run: |
-          ISSUES=$(jq -c '.components[] | select(.issues != null) | {title: .name, body: .issues[] | {description: .description, severity: .severity}}' scan-results.json)
+          ISSUES=$(jq -c '.component[] | select(.issues != null) | {title: .name, body: .issues[] | {description: .description, severity: .severity}}' scan-results.json)
           
           for ISSUE in $ISSUES; do
             TITLE=$(echo "$ISSUE" | jq -r '.title')
