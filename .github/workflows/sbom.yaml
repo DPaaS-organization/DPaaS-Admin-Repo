@@ -189,12 +189,15 @@ jobs:
 
     # Download managed dependencies from a remote JSON file
     - name: Download Managed Dependencies
+      env:
+        TOKEN: ${{ secrets.GITHUB_TOKEN }} # Or use a PAT if required
       run: |
-        curl -s -X GET https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -o managed-dependencies.json -vv
-
+        curl -s -X GET \
+          https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+          -H "Authorization: token $TOKEN" \
+          -H "Content-Type: application/json" \
+          -o managed-dependencies.json
+          
     - name: Debug `managed-dependencies.json`
       run: |
         cat managed-dependencies.json
