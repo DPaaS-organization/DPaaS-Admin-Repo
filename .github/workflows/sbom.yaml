@@ -179,23 +179,21 @@ jobs:
       with:
         name: sbom
 
-    - name: Debug Managed Dependencies Download
-      run: |
-        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-             -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
-             -o managed-dependencies.json -vv
-        echo "Downloaded file content:"
-        cat managed-dependencies.json || echo "Download failed or file is empty"
-
-    # # Download managed dependencies from a remote JSON file
-    # - name: Download Managed Dependencies
+    # - name: Debug Managed Dependencies Download
     #   run: |
-    #     curl -H "Authorization: token ${TOKEN}" \
+    #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
     #          -L https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
     #          -o managed-dependencies.json -vv
-    #   env:
-    #     TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     echo "Downloaded file content:"
+    #     cat managed-dependencies.json || echo "Download failed or file is empty"
 
+    # Download managed dependencies from a remote JSON file
+    - name: Download Managed Dependencies
+      run: |
+        curl -s -X GET https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json") \
+            -o managed-dependencies.json -vv
 
     - name: Debug `managed-dependencies.json`
       run: |
