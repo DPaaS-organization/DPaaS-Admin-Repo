@@ -317,74 +317,48 @@ jobs:
             -H "X-Api-Key: Bearer odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
             -H "Content-Type: application/json" -o scan-results.json -vv
 
-      - name: Create GitHub Issues for Vulnerabilities
+      - name: Parse and Create GitHub Issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # Use GitHub's token for authentication
         run: |
-          # Parse the scan results and create issues
-          findings=$(jq -c '.[]' scan-results.json)
-      
-          if [ -z "$findings" ]; then
-            echo "No vulnerabilities to process."
+          # Replace this with the actual output from the scan; keep it dynamic
+          vulnerabilities=$(cat vulnerabilities.json)
+
+          if [ -z "$vulnerabilities" ]; then
+            echo "No vulnerabilities found to process."
             exit 0
           fi
-      
-          echo "$findings" | while read -r finding; do
-            VULN_ID=$(echo "$finding" | jq -r '.vulnId // "UNKNOWN"')
-            SOURCE=$(echo "$finding" | jq -r '.source // "UNKNOWN"')
-            SEVERITY=$(echo "$finding" | jq -r '.severity // "UNASSIGNED"')
-            DESCRIPTION=$(echo "$finding" | jq -r '.description // "No description available."')
-            PACKAGE=$(echo "$finding" | jq -r '.package // empty')
-            VULNERABLE_VERSIONS=$(echo "$finding" | jq -r '.vulnerableVersions // "N/A"')
-            PATCHED_VERSIONS=$(echo "$finding" | jq -r '.patchedVersions // "N/A"')
-            REFERENCES=$(echo "$finding" | jq -r '
-              if (.references | type == "array") then
-                .references | join("\n* ")
-              elif (.references | type == "string") then
-                .references
-              else
-                "No references available"
-              end
-            ')
-      
-            TITLE="Vulnerability: $PACKAGE ($SEVERITY)"
-            BODY="**Source:** $SOURCE  
-                  **Severity:** $SEVERITY  
-                  **Description:** $DESCRIPTION  
-                  
-                  **Vulnerable Versions:** $VULNERABLE_VERSIONS  
-                  **Patched Versions:** $PATCHED_VERSIONS  
-                  
-                  **References:** $REFERENCES"
-      
-            echo "Checking if an open issue already exists for package: $PACKAGE"
-      
-            # # Check if an open issue already exists for the vulnerable package
-            # existing_issues=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            #   -H "Accept: application/vnd.github.v3+json" \
-            #   "https://api.github.com/repos/${{ github.repository }}/issues?state=open" | jq -r --arg package "$PACKAGE" '.[] | select(.title | contains($package)) | .title')
-      
-            # if [ -n "$existing_issues" ]; then
-            #   echo "An open issue already exists for package: $PACKAGE. Skipping creation."
-            #   continue
-            # fi
-      
-            echo "Creating issue: $TITLE"
-      
-            # Create a new GitHub issue for each finding
-            response=$(curl -s -o response.json -w "%{http_code}" -X POST \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues \
-              -d "$(jq -n \
-                --arg title "$TITLE" \
-                --arg body "$BODY" \
-                --argjson labels "[\"$SEVERITY\"]" \
-                '{title: $title, body: $body, labels: $labels}')")
-      
-            http_status=$(cat response.json | tail -n 1)
-            if [ "$http_status" -ne 201 ]; then
-              echo "Failed to create issue: $(cat response.json)"
-              exit 1
+
+          # Loop through each vulnerability and create a GitHub issue
+          echo "$vulnerabilities" | jq -c '.[]' | while read -r vulnerability; do
+            # Extract data dynamically from each element
+            name=$(echo "$vulnerability" | jq -r '.component.name')
+            version=$(echo "$vulnerability" | jq -r '.component.version')
+            source=$(echo "$vulnerability" | jq -r '.vulnerability.source')
+            vulnId=$(echo "$vulnerability" | jq -r '.vulnerability.vulnId')
+            description=$(echo "$vulnerability" | jq -r '.vulnerability.description')
+            severity=$(echo "$vulnerability" | jq -r '.vulnerability.severity')
+
+            # Compose the issue title and body
+            if [ "$severity" == "null" ]; then
+              severity="UNKNOWN"  # Handle cases where severity is missing
+            fi
+
+            title="$name ($version) - $vulnId [$severity]"
+            body="**Component:** $name ($version)\n\n**Source:** $source\n\n**Vulnerability ID:** $vulnId\n\n**Severity:** $severity\n\n**Description:**\n$description"
+
+            # Create the issue using GitHub API
+            response=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\": \"$title\", \"body\": \"$body\", \"labels\": [\"vulnerability\", \"$severity\"]}" \
+              https://api.github.com/repos/${{ github.repository }}/issues)
+
+            # Check if the issue was created successfully
+            if [ "$response" -eq 201 ]; then
+              echo "GitHub Issue created successfully for $vulnId"
             else
-              echo "Issue created successfully: $(cat response.json)"
+              echo "Failed to create GitHub Issue for $vulnId. HTTP status: $response"
             fi
           done
