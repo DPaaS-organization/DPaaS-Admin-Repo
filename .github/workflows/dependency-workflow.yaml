@@ -275,9 +275,9 @@ jobs:
       - name: Fetch Scan Results
         id: fetch-results
         run: |
-          curl -X GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
+          curl GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
             -H "Authorization: Bearer ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
-            -H "Content-Type: application/json" -vv
+            -H "Content-Type: application/json" -o scan-results.json -vv
 
       - name: Create GitHub Issues for Vulnerabilities
         run: |
