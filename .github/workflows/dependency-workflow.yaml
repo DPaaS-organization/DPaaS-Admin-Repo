@@ -156,10 +156,12 @@ jobs:
       
       # Submit the SBOM to the API
       - name: Submit SBOM to API
+        env:
+          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         run: |
           RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
           -d @payload.json \
-          -H "X-Api-Key: odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
+          -H "X-Api-Key: $DTRACK_API_KEY" \
           -H "Content-Type: application/json")
           
           echo "API Response: $RESPONSE"
@@ -251,41 +253,17 @@ jobs:
     runs-on: self-hosted
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
 
-    steps:
-      # - name: Check Scan Status
-      #   id: check-status
-      #   run: |
-      #     PROJECT_UUID="44a6cbda-f849-4e1b-9943-52be44169eb1"
-      #     SCAN_COMPLETE=false
-      #     while [ "$SCAN_COMPLETE" = false ]; do
-      #     RESPONSE=$(curl -s -X GET "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
-      #         -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
-      #         -H "Content-Type: application/json" -vv)
-      
-      #       echo "API Response: $RESPONSE"  # Debugging line
-
-      #       SCAN_STATUS=$(echo "$RESPONSE" | jq -r '.lastAnalysisStatus')
-      
-      #       if [ "$SCAN_STATUS" = "ANALYZED" ]; then
-      #         SCAN_COMPLETE=true
-      #         echo "Scan completed successfully."
-      #       elif [ "$SCAN_STATUS" = "IN_PROGRESS" ]; then
-      #         echo "Scan still in progress. Waiting..."
-      #         sleep 30
-      #       else
-      #         echo "Scan completed with status: $SCAN_STATUS"
-      #         SCAN_COMPLETE=true
-      #       fi
-      #     done
-          
+    steps:          
       - name: Check Scan Status
+        env:
+          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         id: check-status
         run: |
           PROJECT_UUID="44a6cbda-f849-4e1b-9943-52be44169eb1"
           SCAN_COMPLETE=false
           while [ "$SCAN_COMPLETE" = false ]; do
           RESPONSE=$(curl -s -X GET "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
-              -H "X-Api-Key: odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
+              -H "X-Api-Key: $DTRACK_API_KEY" \
               -H "Content-Type: application/json" -vv)
       
             echo "API Response: $RESPONSE"  # Debugging line
@@ -303,20 +281,18 @@ jobs:
               SCAN_COMPLETE=true
             fi
           done
-
-      # - name: Fetch Scan Results
-      #   id: fetch-results
-      #   run: |
-      #     curl GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-      #       -H "Authorization: Bearer ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
-      #       -H "Content-Type: application/json" -o scan-results.json -vv
+          
       - name: Fetch Scan Results
+        env:
+          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         id: fetch-results
         run: |
           curl GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-            -H "X-Api-Key: Bearer odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
+            -H "X-Api-Key: Bearer $DTRACK_API_KEY" \
             -H "Content-Type: application/json" -o scan-results.json -vv
 
+      - name: Check Scan results
+        run: cat scan-results.json
       - name: Parse and Create GitHub Issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # Use GitHub's token for authentication
