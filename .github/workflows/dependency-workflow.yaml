@@ -156,6 +156,7 @@ jobs:
       
       # Submit the SBOM to the API
       - name: Submit SBOM to API
+        shell: bash
         env:
           DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         run: |
@@ -196,6 +197,7 @@ jobs:
 
     # Download managed dependencies from a remote JSON file
     - name: Download Managed Dependencies
+      shell: bash
       env:
         TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }} # Or use a PAT if required
       run: |
@@ -255,6 +257,7 @@ jobs:
 
     steps:          
       - name: Check Scan Status
+        shell: bash
         env:
           DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         id: check-status
@@ -283,6 +286,7 @@ jobs:
           done
           
       - name: Fetch Scan Results
+        shell: bash
         env:
           DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         id: fetch-results
