@@ -2,16 +2,13 @@ name: Generate CycloneDX SBOM for Multiple Formats
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       DEPENDENCY_TRACK_API_KEY:
         description: "Dependency Track API Key"
         required: true
-        type: string
       ADMIN_ACCESS_TOKEN:
         description: "Admin Access Token"
         required: true
-        type: string
-
 
 jobs:
   generate-sbom:
