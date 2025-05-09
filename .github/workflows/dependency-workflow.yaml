@@ -12,6 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Verify the secret
+        env:
+          MY_SECRET: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+        run: |
+          echo "First 4 characters of the secret: ${MY_SECRET:0:4}"
+          
       # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
