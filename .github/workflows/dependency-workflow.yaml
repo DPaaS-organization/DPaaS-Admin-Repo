@@ -2,6 +2,16 @@ name: Generate CycloneDX SBOM for Multiple Formats
 
 on:
   workflow_call:
+    inputs:
+      DEPENDENCY_TRACK_API_KEY:
+        description: "Dependency Track API Key"
+        required: true
+        type: string
+      ADMIN_ACCESS_TOKEN:
+        description: "Admin Access Token"
+        required: true
+        type: string
+
 
 jobs:
   generate-sbom:
@@ -164,7 +174,7 @@ jobs:
       - name: Submit SBOM to API
         shell: bash
         env:
-          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          DTRACK_API_KEY: ${{ inputs.DEPENDENCY_TRACK_API_KEY }}
         run: |
           RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
           -d @payload.json \
@@ -192,7 +202,7 @@ jobs:
     - name: Download Managed Dependencies
       shell: bash
       env:
-        TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }} # Or use a PAT if required
+        TOKEN: ${{ inputs.ADMIN_ACCESS_TOKEN }} # Or use a PAT if required
       run: |
         curl -s -X GET \
         https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
@@ -252,7 +262,7 @@ jobs:
       - name: Check Scan Status
         shell: bash
         env:
-          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          DTRACK_API_KEY: ${{ inputs.DEPENDENCY_TRACK_API_KEY }}
         id: check-status
         run: |
           PROJECT_UUID="44a6cbda-f849-4e1b-9943-52be44169eb1"
@@ -281,7 +291,7 @@ jobs:
       - name: Fetch Scan Results
         shell: bash
         env:
-          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          DTRACK_API_KEY: ${{ inputs.DEPENDENCY_TRACK_API_KEY }}
         id: fetch-results
         run: |
           curl GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
