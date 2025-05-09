@@ -159,7 +159,7 @@ jobs:
         run: |
           RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
           -d @payload.json \
-          -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+          -H "X-Api-Key: odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
           -H "Content-Type: application/json")
           
           echo "API Response: $RESPONSE"
@@ -167,7 +167,20 @@ jobs:
             echo "Failed to upload SBOM."
             exit 1
           fi
+      # # Submit the SBOM to the API
+      # - name: Submit SBOM to API
+      #   run: |
+      #     RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
+      #     -d @payload.json \
+      #     -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+      #     -H "Content-Type: application/json")
           
+      #     echo "API Response: $RESPONSE"
+      #     if [[ "$RESPONSE" == *"error"* ]]; then
+      #       echo "Failed to upload SBOM."
+      #       exit 1
+      #     fi
+      
   verify-dependency-list:
     runs-on: ubuntu-latest
     needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
