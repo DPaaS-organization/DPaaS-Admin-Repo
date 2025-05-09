@@ -239,21 +239,20 @@ jobs:
     needs: push-sbom # Ensures this job runs only after push-sbom is complete
 
     steps:
-      # Check the status of the scan
       - name: Check Scan Status
         id: check-status
         run: |
           PROJECT_UUID="44a6cbda-f849-4e1b-9943-52be44169eb1"
           SCAN_COMPLETE=false
-
           while [ "$SCAN_COMPLETE" = false ]; do
-            RESPONSE=$(curl -s -X GET "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
-            -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
-            -H "Content-Type: application/json")
-
-            echo "API Response: $RESPONSE" # Debugging line
+          RESPONSE=$(curl -s -X GET "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
+              -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+              -H "Content-Type: application/json")
+      
+            echo "API Response: $RESPONSE"  # Debugging line
 
             SCAN_STATUS=$(echo "$RESPONSE" | jq -r '.lastAnalysisStatus')
+      
             if [ "$SCAN_STATUS" = "ANALYZED" ]; then
               SCAN_COMPLETE=true
               echo "Scan completed successfully."
@@ -265,50 +264,89 @@ jobs:
               SCAN_COMPLETE=true
             fi
           done
+      - name: Debug Scan Results
+        run: |
+          echo "Scan Results:"
+          cat scan-results.json
+      - name: Debug Parsed Findings
+        run: |
+          jq -c '.[]' scan-results.json
 
-      # Step 2: Fetch the scan results
       - name: Fetch Scan Results
         id: fetch-results
         run: |
-          RESPONSE=$(curl -X GET "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-          -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
-          -H "Content-Type: application/json")
+          curl -X GET "http://localhost:8081/api/v1/vulnerability/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
+            -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
+            -H "Content-Type: application/json" -o scan-results.json
 
-          echo "BOM Fetch Response: $RESPONSE" # Debugging line
-
-          # Check if the response is empty
-          if [ -z "$RESPONSE" ]; then
-            echo "No BOM data returned."
-            exit 1
-          fi
-
-          echo "$RESPONSE" > scan-results.json
-
-      # Step 3: Parse the scan results and create issues via Node.js
-      - name: Create Issues from Scan Results
+      - name: Create GitHub Issues for Vulnerabilities
         run: |
-          # Write the JavaScript script dynamically into a file
-          echo 'const fs = require("fs");
-          const { execSync } = require("child_process");
-          
-          const vulnerabilities = JSON.parse(fs.readFileSync("./scan-results.json", "utf8"));
-          
-          vulnerabilities.forEach(vuln => {
-              if (!vuln.analysis.isSuppressed) {
-                  const issueBody = `
-          **Package:** ${vuln.component.name}@${vuln.component.version}
-          **Vulnerability ID:** ${vuln.vulnerability.vulnId}
-          **Description:** ${vuln.vulnerability.description}
-          **Severity:** ${vuln.vulnerability.severity} (Rank: ${vuln.vulnerability.severityRank})
-          **EPSS Score:** ${vuln.vulnerability.epssScore}
-          **Reference:** [More Info](${vuln.attribution.referenceUrl})
-          `;
-                  const title = `Vulnerability: ${vuln.component.name}@${vuln.component.version} - ${vuln.vulnerability.vulnId}`;
-                  execSync(`gh issue create --title "${title}" --body "${issueBody}"`);
-              }
-          });' > create-issues.js
-
-          # Run the script using Node.js
-          node create-issues.js
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Parse the scan results and create issues
+          findings=$(jq -c '.[]' scan-results.json)
+      
+          if [ -z "$findings" ]; then
+            echo "No vulnerabilities to process."
+            exit 0
+          fi
+      
+          echo "$findings" | while read -r finding; do
+            VULN_ID=$(echo "$finding" | jq -r '.vulnId // "UNKNOWN"')
+            SOURCE=$(echo "$finding" | jq -r '.source // "UNKNOWN"')
+            SEVERITY=$(echo "$finding" | jq -r '.severity // "UNASSIGNED"')
+            DESCRIPTION=$(echo "$finding" | jq -r '.description // "No description available."')
+            PACKAGE=$(echo "$finding" | jq -r '.package // empty')
+            VULNERABLE_VERSIONS=$(echo "$finding" | jq -r '.vulnerableVersions // "N/A"')
+            PATCHED_VERSIONS=$(echo "$finding" | jq -r '.patchedVersions // "N/A"')
+            REFERENCES=$(echo "$finding" | jq -r '
+              if (.references | type == "array") then
+                .references | join("\n* ")
+              elif (.references | type == "string") then
+                .references
+              else
+                "No references available"
+              end
+            ')
+      
+            TITLE="Vulnerability: $PACKAGE ($SEVERITY)"
+            BODY="**Source:** $SOURCE  
+                  **Severity:** $SEVERITY  
+                  **Description:** $DESCRIPTION  
+                  
+                  **Vulnerable Versions:** $VULNERABLE_VERSIONS  
+                  **Patched Versions:** $PATCHED_VERSIONS  
+                  
+                  **References:** $REFERENCES"
+      
+            echo "Checking if an open issue already exists for package: $PACKAGE"
+      
+            # # Check if an open issue already exists for the vulnerable package
+            # existing_issues=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #   -H "Accept: application/vnd.github.v3+json" \
+            #   "https://api.github.com/repos/${{ github.repository }}/issues?state=open" | jq -r --arg package "$PACKAGE" '.[] | select(.title | contains($package)) | .title')
+      
+            # if [ -n "$existing_issues" ]; then
+            #   echo "An open issue already exists for package: $PACKAGE. Skipping creation."
+            #   continue
+            # fi
+      
+            echo "Creating issue: $TITLE"
+      
+            # Create a new GitHub issue for each finding
+            response=$(curl -s -o response.json -w "%{http_code}" -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/issues \
+              -d "$(jq -n \
+                --arg title "$TITLE" \
+                --arg body "$BODY" \
+                --argjson labels "[\"$SEVERITY\"]" \
+                '{title: $title, body: $body, labels: $labels}')")
+      
+            http_status=$(cat response.json | tail -n 1)
+            if [ "$http_status" -ne 201 ]; then
+              echo "Failed to create issue: $(cat response.json)"
+              exit 1
+            else
+              echo "Issue created successfully: $(cat response.json)"
+            fi
+          done
