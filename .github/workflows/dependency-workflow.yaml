@@ -282,7 +282,7 @@ jobs:
       - name: Fetch Scan Results
         shell: bash
         env:
-          DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
         id: fetch-results
         run: |
           curl "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
