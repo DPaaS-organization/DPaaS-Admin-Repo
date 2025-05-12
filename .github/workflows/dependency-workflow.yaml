@@ -19,12 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify the secret
-        env:
-          MY_SECRET: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
-        run: |
-          echo "First 4 characters of the secret: ${MY_SECRET:0:4}"
-          
       # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -166,7 +160,8 @@ jobs:
             exit 1
           fi
           echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
-      
+          cat payload.json
+          
       # Submit the SBOM to the API
       - name: Submit SBOM to API
         shell: bash
