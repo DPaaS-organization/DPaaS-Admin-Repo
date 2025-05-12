@@ -160,7 +160,6 @@ jobs:
             exit 1
           fi
           echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
-          cat payload.json
           
       # Submit the SBOM to the API
       - name: Submit SBOM to API
