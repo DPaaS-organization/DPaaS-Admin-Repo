@@ -1,0 +1,30 @@
+name: Secure Build
+
+on: 
+  workflow_call:
+    secrets:
+      DTRACK_API_KEY: 
+        required: true
+      ADMIN_ACCESS_TOKEN:
+        required: true
+      SONAR_TOKEN:
+        required: true
+      SONAR_PROJECT_KEY:  
+        required: true
+
+jobs:
+  sbom-analysis:
+    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/sbom-workflow.yaml@main
+    secrets:
+      DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+      ADMIN_ACCESS_TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
+  sonarqube:
+    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/sonarqube-workflow.yaml@main
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN}}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+  build:
+    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/build.yaml@main
+    needs: 
+      - sbom-analysis
+      - sonarqube
