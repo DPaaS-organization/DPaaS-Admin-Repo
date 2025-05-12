@@ -2,6 +2,11 @@ name: Generate CycloneDX SBOM for Multiple Formats
 
 on:
   workflow_call:
+    secrets:
+      DTRACK_API_KEY: 
+        required: true
+      ADMIN_ACCESS_TOKEN:
+        required: true
 
 jobs:
   # generate-sbom:
@@ -255,7 +260,7 @@ jobs:
           SCAN_COMPLETE=false
           while [ "$SCAN_COMPLETE" = false ]; do
           RESPONSE=$(curl -s "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
-              -H "ApiKeyAuth: $DTRACK_API_KEY" \
+              -H "X-Api-Key: $DTRACK_API_KEY" \
               -H "Content-Type: application/json" -vv)
     
             echo "API Response: $RESPONSE"  # Debugging line
@@ -273,7 +278,7 @@ jobs:
               SCAN_COMPLETE=true
             fi
           done
-          
+        
       - name: Fetch Scan Results
         shell: bash
         env:
