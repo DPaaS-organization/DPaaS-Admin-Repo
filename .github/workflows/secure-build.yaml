@@ -13,8 +13,8 @@ on:
         required: true
 
 jobs:
-  sbom-analysis:
-    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/sbom-workflow.yaml@main
+  dependency-analysis:
+    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/dependency-analysis.yaml@main
     secrets:
       DTRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
       ADMIN_ACCESS_TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
@@ -26,5 +26,5 @@ jobs:
   build:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/build.yaml@main
     needs: 
-      - sbom-analysis
+      - dependency-analysis
       - sonarqube
