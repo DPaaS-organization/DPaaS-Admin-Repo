@@ -11,245 +11,245 @@ on:
         required: true
 
 jobs:
-  generate-sbom:
-    runs-on: ubuntu-latest
+  # generate-sbom:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      # Checkout code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     # Checkout code from the repository
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '16'  # Specify the Node.js version
+  #     # Set up Node.js environment
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '16'  # Specify the Node.js version
 
-      # Install npm dependencies if package.json has changed
-      - name: Install npm dependencies
-        if: hashFiles('package.json')
-        run: npm install --legacy-peer-deps
+  #     # Install npm dependencies if package.json has changed
+  #     - name: Install npm dependencies
+  #       if: hashFiles('package.json')
+  #       run: npm install --legacy-peer-deps
 
-      # Install a specific missing npm dependency
-      - name: Install missing dependencies
-        if: hashFiles('package.json')
-        run: npm install eslint-plugin-n@15 --save-dev
+  #     # Install a specific missing npm dependency
+  #     - name: Install missing dependencies
+  #       if: hashFiles('package.json')
+  #       run: npm install eslint-plugin-n@15 --save-dev
 
-      # Force install a specific TypeScript version
-      - name: Force install TypeScript version
-        if: hashFiles('package.json')
-        run: npm install typescript@4.6.4 --save-dev --force
+  #     # Force install a specific TypeScript version
+  #     - name: Force install TypeScript version
+  #       if: hashFiles('package.json')
+  #       run: npm install typescript@4.6.4 --save-dev --force
 
-      # Generate CycloneDX SBOM for npm
-      - name: Generate CycloneDX SBOM for npm
-        if: hashFiles('package.json')
-        run: npx @cyclonedx/cyclonedx-npm --output-file sbom-npm.json
+  #     # Generate CycloneDX SBOM for npm
+  #     - name: Generate CycloneDX SBOM for npm
+  #       if: hashFiles('package.json')
+  #       run: npx @cyclonedx/cyclonedx-npm --output-file sbom-npm.json
 
-      # Set up Python environment if requirements.txt or setup.py exists
-      - name: Set up Python
-        if: hashFiles('requirements.txt') || hashFiles('setup.py')
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'  # Specify the Python version
+  #     # Set up Python environment if requirements.txt or setup.py exists
+  #     - name: Set up Python
+  #       if: hashFiles('requirements.txt') || hashFiles('setup.py')
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.9'  # Specify the Python version
 
-      # Install pip dependencies if requirements.txt or setup.py exists
-      - name: Install pip dependencies
-        if: hashFiles('requirements.txt') || hashFiles('setup.py')
-        run: pip install -r requirements.txt
+  #     # Install pip dependencies if requirements.txt or setup.py exists
+  #     - name: Install pip dependencies
+  #       if: hashFiles('requirements.txt') || hashFiles('setup.py')
+  #       run: pip install -r requirements.txt
 
-      # Generate CycloneDX SBOM for pip
-      - name: Generate CycloneDX SBOM for pip
-        if: hashFiles('requirements.txt') || hashFiles('setup.py')
-        run: cyclonedx-py --output sbom-pip.json
+  #     # Generate CycloneDX SBOM for pip
+  #     - name: Generate CycloneDX SBOM for pip
+  #       if: hashFiles('requirements.txt') || hashFiles('setup.py')
+  #       run: cyclonedx-py --output sbom-pip.json
 
-      # Set up Java environment if pom.xml exists
-      - name: Set up Java
-        if: hashFiles('pom.xml')
-        uses: actions/setup-java@v4
-        with:
-          java-version: '11'  # Specify the Java version
-          distribution: 'adopt'
+  #     # Set up Java environment if pom.xml exists
+  #     - name: Set up Java
+  #       if: hashFiles('pom.xml')
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: '11'  # Specify the Java version
+  #         distribution: 'adopt'
 
-      # Install Maven dependencies if pom.xml exists
-      - name: Install Maven dependencies
-        if: hashFiles('pom.xml')
-        run: mvn install
+  #     # Install Maven dependencies if pom.xml exists
+  #     - name: Install Maven dependencies
+  #       if: hashFiles('pom.xml')
+  #       run: mvn install
 
-      # Generate CycloneDX SBOM for Maven
-      - name: Generate CycloneDX SBOM for Maven
-        if: hashFiles('pom.xml')
-        run: mvn cyclonedx:makeAggregateBom
+  #     # Generate CycloneDX SBOM for Maven
+  #     - name: Generate CycloneDX SBOM for Maven
+  #       if: hashFiles('pom.xml')
+  #       run: mvn cyclonedx:makeAggregateBom
 
-      # Set up Ruby environment if Gemfile exists
-      - name: Set up Ruby
-        if: hashFiles('Gemfile')
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '2.7'  # Specify the Ruby version
+  #     # Set up Ruby environment if Gemfile exists
+  #     - name: Set up Ruby
+  #       if: hashFiles('Gemfile')
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: '2.7'  # Specify the Ruby version
 
-      # Install Bundler dependencies if Gemfile exists
-      - name: Install Bundler dependencies
-        if: hashFiles('Gemfile')
-        run: bundle install
+  #     # Install Bundler dependencies if Gemfile exists
+  #     - name: Install Bundler dependencies
+  #       if: hashFiles('Gemfile')
+  #       run: bundle install
 
-      # Generate CycloneDX SBOM for Bundler
-      - name: Generate CycloneDX SBOM for Bundler
-        if: hashFiles('Gemfile')
-        run: cyclonedx-bundler --output sbom-bundler.json
+  #     # Generate CycloneDX SBOM for Bundler
+  #     - name: Generate CycloneDX SBOM for Bundler
+  #       if: hashFiles('Gemfile')
+  #       run: cyclonedx-bundler --output sbom-bundler.json
 
-      # Debugging: List generated SBOM files
-      - name: List Generated SBOM Files
-        run: ls -lh sbom-*.json target || echo "No SBOM files found"
+  #     # Debugging: List generated SBOM files
+  #     - name: List Generated SBOM Files
+  #       run: ls -lh sbom-*.json target || echo "No SBOM files found"
 
-      # Merge SBOMs into one unified SBOM
-      - name: Merge SBOMs
-        run: |
-          # Initialize an array to hold existing SBOM files
-          sbom_files=()
+  #     # Merge SBOMs into one unified SBOM
+  #     - name: Merge SBOMs
+  #       run: |
+  #         # Initialize an array to hold existing SBOM files
+  #         sbom_files=()
 
-          # Check for the existence of each SBOM file and add to the array if it exists
-          if [ -f sbom-npm.json ]; then
-            sbom_files+=("sbom-npm.json")
-          fi
+  #         # Check for the existence of each SBOM file and add to the array if it exists
+  #         if [ -f sbom-npm.json ]; then
+  #           sbom_files+=("sbom-npm.json")
+  #         fi
 
-          if [ -f sbom-pip.json ]; then
-            sbom_files+=("sbom-pip.json")
-          fi
+  #         if [ -f sbom-pip.json ]; then
+  #           sbom_files+=("sbom-pip.json")
+  #         fi
 
-          if [ -f target/cyclonedx-bom.xml ]; then
-            sbom_files+=("target/cyclonedx-bom.xml")
-          fi
+  #         if [ -f target/cyclonedx-bom.xml ]; then
+  #           sbom_files+=("target/cyclonedx-bom.xml")
+  #         fi
 
-          if [ -f sbom-bundler.json ]; then
-            sbom_files+=("sbom-bundler.json")
-          fi
+  #         if [ -f sbom-bundler.json ]; then
+  #           sbom_files+=("sbom-bundler.json")
+  #         fi
 
-          # Check if any SBOM files were found
-          if [ ${#sbom_files[@]} -eq 0 ]; then
-            echo "No SBOM files found to merge."
-            exit 1
-          fi
+  #         # Check if any SBOM files were found
+  #         if [ ${#sbom_files[@]} -eq 0 ]; then
+  #           echo "No SBOM files found to merge."
+  #           exit 1
+  #         fi
 
-          # Use jq to merge the existing SBOMs into one unified SBOM
-          jq -s 'reduce .[] as $item ({}; . * $item)' "${sbom_files[@]}" > sbom.json
+  #         # Use jq to merge the existing SBOMs into one unified SBOM
+  #         jq -s 'reduce .[] as $item ({}; . * $item)' "${sbom_files[@]}" > sbom.json
 
-      # Upload the Unified SBOM
-      - name: Upload Unified SBOM
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom
-          path: sbom.json
+  #     # Upload the Unified SBOM
+  #     - name: Upload Unified SBOM
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: sbom
+  #         path: sbom.json
 
-  push-sbom:
-    runs-on: self-hosted
-    needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
+  # push-sbom:
+  #   runs-on: self-hosted
+  #   needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
 
-    steps:
-      # Download the SBOM artifact
-      - name: Download SBOMs
-        uses: actions/download-artifact@v4
-        with:
-          name: sbom
+  #   steps:
+  #     # Download the SBOM artifact
+  #     - name: Download SBOMs
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: sbom
 
-      # Wrap SBOM in required JSON structure
-      - name: Wrap SBOM in required JSON structure
-        run: |
-          SBOM_CONTENT=$(base64 -w 0 sbom.json || echo "")  # Adjusted path
-          if [ -z "$SBOM_CONTENT" ]; then
-            echo "SBOM file is empty or missing."
-            exit 1
-          fi
-          echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
+  #     # Wrap SBOM in required JSON structure
+  #     - name: Wrap SBOM in required JSON structure
+  #       run: |
+  #         SBOM_CONTENT=$(base64 -w 0 sbom.json || echo "")  # Adjusted path
+  #         if [ -z "$SBOM_CONTENT" ]; then
+  #           echo "SBOM file is empty or missing."
+  #           exit 1
+  #         fi
+  #         echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
           
-      # Submit the SBOM to the API
-      - name: Submit SBOM to API
-        shell: bash
-        env:
-          DTRACK_API_KEY: ${{ inputs.DEPENDENCY_TRACK_API_KEY }}
-        run: |
-          RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
-          -d @payload.json \
-          -H "X-Api-Key: Bearer $DTRACK_API_KEY" \
-          -H "Content-Type: application/json")
+  #     # Submit the SBOM to the API
+  #     - name: Submit SBOM to API
+  #       shell: bash
+  #       env:
+  #         DTRACK_API_KEY: ${{ inputs.DEPENDENCY_TRACK_API_KEY }}
+  #       run: |
+  #         RESPONSE=$(curl -s -X "PUT" "http://localhost:8081/api/v1/bom" \
+  #         -d @payload.json \
+  #         -H "X-Api-Key: Bearer $DTRACK_API_KEY" \
+  #         -H "Content-Type: application/json")
 
-          echo "API key: $DTRACK_API_KEY
+  #         echo "API key: $DTRACK_API_KEY
           
-          echo "API Response: $RESPONSE"
-          if [[ "$RESPONSE" == *"error"* ]]; then
-            echo "Failed to upload SBOM."
-            exit 1
-          fi
+  #         echo "API Response: $RESPONSE"
+  #         if [[ "$RESPONSE" == *"error"* ]]; then
+  #           echo "Failed to upload SBOM."
+  #           exit 1
+  #         fi
       
-  verify-dependency-list:
-    runs-on: ubuntu-latest
-    needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
+  # verify-dependency-list:
+  #   runs-on: ubuntu-latest
+  #   needs: generate-sbom # Ensures this job runs only after generate-sbom is complete
     
-    steps:
-    # Download the SBOM artifact
-    - name: Download SBOMs
-      uses: actions/download-artifact@v4
-      with:
-        name: sbom
+  #   steps:
+  #   # Download the SBOM artifact
+  #   - name: Download SBOMs
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: sbom
 
-    # Download managed dependencies from a remote JSON file
-    - name: Download Managed Dependencies
-      shell: bash
-      env:
-        TOKEN: ${{ inputs.ADMIN_ACCESS_TOKEN }} # Or use a PAT if required
-      run: |
-        curl -s -X GET \
-        https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
-        -H "Authorization: token $TOKEN" \
-        -H "Content-Type: application/json"  -vv -o managed-dependencies.txt
+  #   # Download managed dependencies from a remote JSON file
+  #   - name: Download Managed Dependencies
+  #     shell: bash
+  #     env:
+  #       TOKEN: ${{ inputs.ADMIN_ACCESS_TOKEN }} # Or use a PAT if required
+  #     run: |
+  #       curl -s -X GET \
+  #       https://raw.githubusercontent.com/DPaaS-organization/DPaaS-Admin-Repo/main/managed-dependencies.json \
+  #       -H "Authorization: token $TOKEN" \
+  #       -H "Content-Type: application/json"  -vv -o managed-dependencies.txt
 
-    - name: Debug `managed-dependencies.txt`
-      run: |
-        cat managed-dependencies.txt
+  #   - name: Debug `managed-dependencies.txt`
+  #     run: |
+  #       cat managed-dependencies.txt
 
-    # # Validate the structure of the managed dependencies JSON file
-    # - name: Validate JSON
-    #   run: |
-    #     jq empty managed-dependencies.json || (echo "Invalid JSON" && exit 1)
+  #   # # Validate the structure of the managed dependencies JSON file
+  #   # - name: Validate JSON
+  #   #   run: |
+  #   #     jq empty managed-dependencies.json || (echo "Invalid JSON" && exit 1)
 
-    # - name: Extract Managed Dependencies
-    #   run: |
-    #     jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
+  #   # - name: Extract Managed Dependencies
+  #   #   run: |
+  #   #     jq -r '.managedDependencies | keys[]' managed-dependencies.json > managed-dependencies.txt
 
-    # # Extract managed dependencies from the downloaded JSON
-    # - name: Extract Managed Dependencies
-    #   run: |
-    #     jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
+  #   # # Extract managed dependencies from the downloaded JSON
+  #   # - name: Extract Managed Dependencies
+  #   #   run: |
+  #   #     jq -r 'keys[]' managed-dependencies.json > managed-dependencies.txt
 
-    # # Verify that all SBOM dependencies are in the managed dependencies list
-    # - name: Verify Dependencies
-    #   run: |
-    #     # Compare the two lists
-    #     if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
-    #       echo "Some dependencies are not in the managed dependencies list."
-    #       exit 1
-    #     fi
+  #   # # Verify that all SBOM dependencies are in the managed dependencies list
+  #   # - name: Verify Dependencies
+  #   #   run: |
+  #   #     # Compare the two lists
+  #   #     if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
+  #   #       echo "Some dependencies are not in the managed dependencies list."
+  #   #       exit 1
+  #   #     fi
 
-    - name: Parse SBOM to Dependencies List
-      run: |
-        # Extract dependency names from the SBOM
-        jq -r '.components[].name' sbom.json > sbom-dependencies.txt
-        echo "Parsed SBOM Dependencies:"
-        cat sbom-dependencies.txt
+  #   - name: Parse SBOM to Dependencies List
+  #     run: |
+  #       # Extract dependency names from the SBOM
+  #       jq -r '.components[].name' sbom.json > sbom-dependencies.txt
+  #       echo "Parsed SBOM Dependencies:"
+  #       cat sbom-dependencies.txt
 
-    # Verify Dependencies
-    - name: Verify Dependencies
-      run: |
-        # Compare the two lists using comm
-        if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
-          echo "Some dependencies in the SBOM are NOT in the managed dependencies list."
-          exit 1
-        else
-          echo "All SBOM dependencies are present in the managed dependencies list."
-        fi
+  #   # Verify Dependencies
+  #   - name: Verify Dependencies
+  #     run: |
+  #       # Compare the two lists using comm
+  #       if ! comm -12 <(sort sbom-dependencies.txt) <(sort managed-dependencies.txt) > /dev/null; then
+  #         echo "Some dependencies in the SBOM are NOT in the managed dependencies list."
+  #         exit 1
+  #       else
+  #         echo "All SBOM dependencies are present in the managed dependencies list."
+  #       fi
         
   fetch-scan-from-dependency-track:
     runs-on: self-hosted
-    needs: push-sbom # Ensures this job runs only after push-sbom is complete
+    # needs: push-sbom # Ensures this job runs only after push-sbom is complete
 
     steps:          
       - name: Check Scan Status
