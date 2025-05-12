@@ -2,6 +2,11 @@ name: SonarQube Workflow
 
 on:
   workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: true
+      SONAR_PROJECT_KEY:  
+        required: true
 
 jobs:
   # Performs a static analysis of the source code.
