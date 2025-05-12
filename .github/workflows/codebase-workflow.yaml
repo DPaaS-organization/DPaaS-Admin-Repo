@@ -1,39 +1,44 @@
-name: ci-workflow
+name: Codebase Workflow
 
 on:
   workflow_call:
 
 jobs:
+  # Performs a static analysis of the source code.
+  # Returns a list of 'security hotspots' that indicate potential software weaknesses
   sonar:
     runs-on: ubuntu-latest
     steps:
-      # Step to checkout the code from the repository
+      # Check out source code from the repository
       - name: Checkout code
         uses: actions/checkout@v4
         
-      # Step to perform a SonarQube scan on the code
+      # Preforms SonarQube scan and stores results on external SonarQube dashboard.
+      # @SONAR_TOKEN: token used for SonarQube authentication, specific to the SonarQube environment
+      # @SONAR_PROJECT_VERSION: version of the SonarQube project.
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Token for SonarQube authentication
-          SONAR_PROJECT_VERSION: '1.0'  # Version of the project being scanned
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_VERSION: '1.0'  
 
-      # Step to retrieve issues found by SonarQube
+      # Retrieve security issues from external SonarQube dashboard via a cURL command. 
+      # The issues are saved and stored in an issues.json file to use in the next step.
+      # @SONAR_TOKEN: token used for SonarQube authentication, specific to the SonarQube environment
+      # @SONAR_PROJECT_KEY: This key is specific to the SonarQube project. It specifies which
+      # project issues to retrieve
       - name: Get SonarQube Issues
         id: get_issues
         run: |
-          # Use the SonarQube API to search for issues in the specified project
-          # Authentication is done using the SONAR_TOKEN secret
-          # The SONAR_PROJECT_KEY is a unique key of the SonarQube project to specify which 
-          # project's issues to retrieve
           curl -s -u ${{ secrets.SONAR_TOKEN }} \
             "https://sonarcloud.io/api/issues/search?projectKeys=${{ secrets.SONAR_PROJECT_KEY }}" \
-            | jq -c '[.issues[]]' > issues.json  # Save issues to a JSON file
+            | jq -c '[.issues[]]' > issues.json  
     
-          # Set the output variable 'issues' to be used in later steps
           echo "::set-output name=issues::$(cat issues.json)" 
     
-      # Step to create GitHub issues for each SonarQube issue found
+      # Use the issues.json to generate GitHub issues via cURL command. These issues can be linked to a planning tool.
+      # @GITHUB_TOKEN: A token specific to a GitHub repository. This specifies in which project
+      # the issues are uploaded.
       - name: Create GitHub Issues
         if: steps.get_issues.outputs.issues != ''
         run: |
@@ -64,34 +69,40 @@ jobs:
               fi
           done
       
-      # Step to check the quality gate status from SonarQube
+      # Verify whether the scan meets the criteria in the Quality gate set up in SonarQube.
+      # When the Quality Gate is not met, an error is given and the build is blocked.
       - name: Check Quality Gate
         run: |
           STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }} \
             "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${{ secrets.SONAR_PROJECT_KEY }}" \
             | jq -r '.projectStatus.status')
           if [ "$STATUS" != "OK" ]; then
-            echo "::error ::Quality gate failed: $STATUS"  # Log error if quality gate fails
+            echo "::error ::Quality gate failed: $STATUS"
             exit 1  # Exit with error
           fi
-  
+
+  # Performs an OWASP ZAP scan. This is a dynamic test of a fully running application.
+  # Firstly the application must be started in a Docker environment.
   zap_scan:
     runs-on: ubuntu-latest
     name: DAST Webapp scan
     steps:
-    # Step to checkout the code from the repository
+    # Check out source code from the repository.
     - name: Checkout
       uses: actions/checkout@v4
       with:
         ref: main
 
-    # Step to pull and run the Juice Shop Docker image
+    # Pull the latest version of the Docker image and start it in detached mode. 
+    # Detached mode means another task can be executed simultaniously
     - name: Run Juice Shop image
       run: | 
         docker pull bkimminich/juice-shop  # Pull the Juice Shop image
         docker run -p 3000:3000 --detach bkimminich/juice-shop  # Run the image in detached mode
 
-    # Step to perform a ZAP scan on the running application
+    # OWASP ZAP scan is executed on the Docker environment.
+    # @GITHUB_TOKEN: A token specific to a GitHub repository. This specifies in which project
+    # the issues are uploaded.
     - name: ZAP SCAN
       uses: zaproxy/action-full-scan@v0.12.0
       with:
@@ -101,12 +112,12 @@ jobs:
         rules_file_name: '.zap/rules.tsv'  # Custom rules for the scan
         cmd_options: '-a'  # Additional command options
 
-    # Step to generate a ZAP report in JSON format
+    # Generate a report of the OWASP ZAP scan in JSON format.
     - name: Generate ZAP Report
       run: |
         docker run --rm -v ${{ github.workspace }}:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap.sh -cmd -quickurl http://localhost:3000 -quickout /zap/wrk/zap_report.json
 
-    # Step to create GitHub issues for findings from the ZAP report
+    # Create GitHub issues for findings from the ZAP report
     - name: Create GitHub Issues for Findings
       run: |
         findings=$(jq -c '.site[].alerts[]' zap_report.json)  # Parse findings from the report
