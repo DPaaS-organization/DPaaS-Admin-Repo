@@ -249,7 +249,11 @@ jobs:
     runs-on: self-hosted
     # needs: push-sbom # Ensures this job runs only after push-sbom is complete
 
-    steps:          
+    steps:  
+      - name: Debug Secret
+        run: echo "API Key Length: ${DTRACK_API_KEY}"
+        env:
+          DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
       - name: Check Scan Status
         shell: bash
         env:
@@ -260,7 +264,7 @@ jobs:
           SCAN_COMPLETE=false
           while [ "$SCAN_COMPLETE" = false ]; do
           RESPONSE=$(curl -s "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
-              -H "X-Api-Key: $DTRACK_API_KEY" \
+              -H "X-Api-Key: ${DTRACK_API_KEY}" \
               -H "Content-Type: application/json" -vv)
     
             echo "API Response: $RESPONSE"  # Debugging line
