@@ -281,7 +281,7 @@ jobs:
         id: fetch-results
         run: |
           curl "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-            -H "X-Api-Key: $DTRACK_API_KEY" \
+            -H "X-Api-Key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}" \
             -H "Content-Type: application/json" -o scan-results.json -vv
 
       - name: Check Scan results
