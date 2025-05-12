@@ -288,7 +288,7 @@ jobs:
         id: fetch-results
         run: |
           curl "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
-            -H "ApiKeyAuth: odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
+            -H "X-Api-Key: odt_KO99bZBH_E5lKH30ZaWSdlZ2aoN6uuutiEsiswXpl" \
             -H "Content-Type: application/json" -o scan-results.json -vv
 
       - name: Check Scan results
