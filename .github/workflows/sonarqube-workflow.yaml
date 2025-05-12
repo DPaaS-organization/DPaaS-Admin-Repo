@@ -1,4 +1,4 @@
-name: Codebase Workflow
+name: SonarQube Workflow
 
 on:
   workflow_call:
