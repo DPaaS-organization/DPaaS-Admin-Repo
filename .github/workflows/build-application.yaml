@@ -19,7 +19,7 @@ jobs:
 
       # Step 3: Restore Dependencies
       - name: Restore dependencies
-        run: dotnet restoreWoodpecker.sln  # Replace with the path to your .sln file
+        run: dotnet restore Woodpecker.sln  # Replace with the path to your .sln file
 
       # Step 4: Build
       - name: Build solution
