@@ -36,11 +36,13 @@ jobs:
         id: get_issues
         run: |
           curl -s -u ${{ secrets.SONAR_TOKEN }} \
-            "https://sonarcloud.io/api/issues/search?projectKeys=${{ secrets.SONAR_PROJECT_KEY }}" \
+            "https://sonarcloud.io/api/issues/search?projectKeys=${{ secrets.SONAR_PROJECT_KEY }}"  -vv \
             | jq -c '[.issues[]]' > issues.json  
     
           echo "::set-output name=issues::$(cat issues.json)" 
-    
+
+
+      
       # Use the issues.json to generate GitHub issues via cURL command. These issues can be linked to a planning tool.
       # @GITHUB_TOKEN: A token specific to a GitHub repository. This specifies in which project
       # the issues are uploaded.
