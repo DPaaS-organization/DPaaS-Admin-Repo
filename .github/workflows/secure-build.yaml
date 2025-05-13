@@ -11,6 +11,8 @@ on:
         required: true
       SONAR_PROJECT_KEY:  
         required: true
+      DTRACK_PROJECT_KEY:
+        required: true
 
 jobs:
   dependency-analysis:
