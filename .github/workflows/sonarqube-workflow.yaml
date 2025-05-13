@@ -75,6 +75,10 @@ jobs:
             - **Description:** $DESCRIPTION
             - **Unique Key:** $KEY"
       
+            # Escape title and body for JSON
+            title_escaped=$(echo "$TITLE" | jq -Rr @json)
+            body_escaped=$(echo "$BODY" | jq -Rr @json)
+      
             # Check if the issue already exists in GitHub by its key
             echo "Checking if issue with key '$KEY' already exists..."
             existing_issue=$(curl -s -H "Authorization: token $GITHUB_API_TOKEN" \
@@ -89,11 +93,20 @@ jobs:
       
             # Create new issue in GitHub
             echo "Creating new issue for key '$KEY'..."
-            curl -s -X POST \
+            response=$(curl -s -o response.json -w "%{http_code}" -X POST \
               -H "Authorization: token $GITHUB_API_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
-              -d "{ \"title\": \"$TITLE\", \"body\": \"$BODY\" }" \
-              "https://api.github.com/repos/${{ github.repository }}/issues"
+              -d "{ \"title\": $title_escaped, \"body\": $body_escaped }" \
+              "https://api.github.com/repos/${{ github.repository }}/issues")
+            
+            if [[ "$response" -ne 201 ]]; then
+              echo "Failed to create issue for key '$KEY'. HTTP Response: $response"
+              echo "Error Response:"
+              cat response.json
+              exit 1 # Fail the step if HTTP status code is not 201 (successfully created)
+            else
+              echo "Issue created successfully for key '$KEY'."
+            fi
           done
       
       # Verify whether the scan meets the criteria in the Quality gate set up in SonarQube.
