@@ -151,13 +151,15 @@ jobs:
 
       # Wrap SBOM in required JSON structure
       - name: Wrap SBOM in required JSON structure
+        env:
+          DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
         run: |
           SBOM_CONTENT=$(base64 -w 0 sbom.json || echo "")  # Adjusted path
           if [ -z "$SBOM_CONTENT" ]; then
             echo "SBOM file is empty or missing."
             exit 1
           fi
-          echo "{\"project\": \"44a6cbda-f849-4e1b-9943-52be44169eb1\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
+          echo "{\"project\": \"$DTRACK_PROJECT_KEY\", \"bom\": \"$SBOM_CONTENT\"}" > payload.json
           
       # Submit the SBOM to the API
       - name: Submit SBOM to API
@@ -229,12 +231,13 @@ jobs:
         shell: bash
         env:
           DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
+          DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
+
         id: check-status
         run: |
-          PROJECT_UUID="44a6cbda-f849-4e1b-9943-52be44169eb1"
           SCAN_COMPLETE=false
           while [ "$SCAN_COMPLETE" = false ]; do
-          RESPONSE=$(curl -s "http://localhost:8081/api/v1/project/${PROJECT_UUID}" \
+          RESPONSE=$(curl -s "http://localhost:8081/api/v1/project/$DTRACK_PROJECT_KEY" \
               -H "X-Api-Key: $DTRACK_API_KEY" \
               -H "Content-Type: application/json" -vv)
     
@@ -258,9 +261,10 @@ jobs:
         shell: bash
         env:
           DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
+          DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
         id: fetch-results
         run: |
-          curl "http://localhost:8081/api/v1/finding/project/44a6cbda-f849-4e1b-9943-52be44169eb1" \
+          curl "http://localhost:8081/api/v1/finding/project/$DTRACK_PROJECT_KEY" \
             -H "X-Api-Key: $DTRACK_API_KEY" \
             -H "Content-Type: application/json" -o scan-results.json -vv
 
