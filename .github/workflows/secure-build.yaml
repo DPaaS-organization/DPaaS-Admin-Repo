@@ -11,6 +11,8 @@ on:
         required: true
       SONAR_PROJECT_KEY:  
         required: true
+      WORKING_REPOSITORY:
+        required: true
 
 jobs:
   dependency-analysis:
@@ -24,7 +26,7 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN}}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
   build:
-    uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/build-application.yaml@main
+    uses: DPaaS-organization/$WORKING_REPOSITORY/.github/workflows/build-application.yaml@main
     needs: 
       - dependency-analysis
       - sonarqube
