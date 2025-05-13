@@ -169,8 +169,6 @@ jobs:
           -d @payload.json \
           -H "X-Api-Key: Bearer $DTRACK_API_KEY" \
           -H "Content-Type: application/json")
-
-          echo "API key: $DTRACK_API_KEY
           
           echo "API Response: $RESPONSE"
           if [[ "$RESPONSE" == *"error"* ]]; then
