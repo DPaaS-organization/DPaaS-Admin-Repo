@@ -47,34 +47,53 @@ jobs:
       # Use the issues.json to generate GitHub issues via cURL command. These issues can be linked to a planning tool.
       # @GITHUB_TOKEN: A token specific to a GitHub repository. This specifies in which project
       # the issues are uploaded.
-      - name: Create GitHub Issues
-        if: steps.get_issues.outputs.issues != ''
+      - name: Create GitHub Issues for Security Problems
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          SECURITY_RULES=("typescript:S2486" "typescript:S1135" "typescript:S1134") # Add relevant security rules
+      
           jq -c '.[]' issues.json | while read -r issue; do
-              TITLE=$(echo "$issue" | jq -r '.message')  # Extract issue title
-              UNIQUE_KEY=$(echo "$issue" | jq -r '.key')  # Extract unique key for the issue
-              BODY="Severity: $(echo "$issue" | jq -r '.severity')\nFile: $(echo "$issue" | jq -r '.component')\nDescription: $(echo "$issue" | jq -r '.description')\n\nUnique Key: $UNIQUE_KEY"
-
-              echo "Checking if issue already exists with title: $TITLE and key: $UNIQUE_KEY"
-
-              # Check if the issue already exists in GitHub
-              existing_issue=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/lucvdacker/DPaaS/issues?state=open&filter=all&per_page=100" \
-                | jq -r --arg TITLE "$TITLE" --arg UNIQUE_KEY "$UNIQUE_KEY" '.[] | select(.title == $TITLE and (.body | contains($UNIQUE_KEY))) | .number')
-
-              if [ -n "$existing_issue" ]; then
-                  echo "Issue already exists: #$existing_issue. Skipping creation."
-              else
-                  echo "Creating new issue with title: $TITLE"
-                  response=$(curl -X POST \
-                    -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    https://api.github.com/repos/lucvdacker/DPaaS/issues \
-                    -d "{\"title\": \"$TITLE\", \"body\": \"$BODY\"}")
-
-                  echo "Response: $response"  # Output response from GitHub API
-              fi
+            # Extract relevant fields
+            KEY=$(echo "$issue" | jq -r '.key')
+            RULE=$(echo "$issue" | jq -r '.rule')
+            SEVERITY=$(echo "$issue" | jq -r '.severity')
+            COMPONENT=$(echo "$issue" | jq -r '.component')
+            DESCRIPTION=$(echo "$issue" | jq -r '.message')
+      
+            # Check if the issue is security-related
+            if [[ ! " ${SECURITY_RULES[@]} " =~ " ${RULE} " ]]; then
+              continue
+            fi
+      
+            # Create issue title and body
+            TITLE="Security Issue: $DESCRIPTION ($SEVERITY)"
+            BODY="### Security Issue Details
+            - **Rule:** $RULE
+            - **Severity:** $SEVERITY
+            - **Component:** $COMPONENT
+            - **Description:** $DESCRIPTION
+            - **Unique Key:** $KEY"
+      
+            # Check if the issue already exists in GitHub by its key
+            echo "Checking if issue with key '$KEY' already exists..."
+            existing_issue=$(curl -s -H "Authorization: token $GITHUB_API_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/issues?state=open&per_page=100" \
+              | jq -r --arg KEY "$KEY" '.[] | select(.body | contains($KEY)) | .number')
+      
+            if [[ -n "$existing_issue" ]]; then
+              echo "Issue with key '$KEY' already exists as #$existing_issue. Skipping..."
+              continue
+            fi
+      
+            # Create new issue in GitHub
+            echo "Creating new issue for key '$KEY'..."
+            curl -s -X POST \
+              -H "Authorization: token $GITHUB_API_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -d "{ \"title\": \"$TITLE\", \"body\": \"$BODY\" }" \
+              "https://api.github.com/repos/${{ github.repository }}/issues"
           done
       
       # Verify whether the scan meets the criteria in the Quality gate set up in SonarQube.
