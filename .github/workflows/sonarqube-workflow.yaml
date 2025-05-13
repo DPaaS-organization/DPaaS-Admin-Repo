@@ -41,7 +41,8 @@ jobs:
     
           echo "::set-output name=issues::$(cat issues.json)" 
 
-
+      - name: Debug Issues
+        run: cat issues.json
       
       # Use the issues.json to generate GitHub issues via cURL command. These issues can be linked to a planning tool.
       # @GITHUB_TOKEN: A token specific to a GitHub repository. This specifies in which project
