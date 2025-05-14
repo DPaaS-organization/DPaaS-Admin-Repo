@@ -1,0 +1,50 @@
+name: Deploy Application to production environment
+
+on:
+  workflow_call:
+    inputs:
+      dockerImageName:
+        description: 'Name of the Docker image to build'
+        required: true
+        type: string
+        
+jobs:
+  dynamic-docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ inputs.dockerImageName }} ./Dockerfile .
+
+      - name: Save Docker Image as Tarball
+        run: |
+          docker save ${{ inputs.dockerImageName }} -o docker-image.tar
+      
+      - name: Upload image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: docker-image.tar
+  deploy-to-test:
+    runs-on: self-hosted
+    needs: dynamic-docker-build
+    steps:
+      - name: Download Docker Image Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load Docker Image on Self-Hosted Runner
+        run: |
+          docker load -i docker-image.tar
+
+      - name: Run Docker Container
+        run: |
+          docker run -d -p 3000:3000 ${{ inputs.dockerImageName }}
+
+      - name: Verify Running Container
+        run: |
+          docker ps         
