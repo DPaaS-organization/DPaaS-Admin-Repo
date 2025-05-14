@@ -17,7 +17,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ inputs.dockerImageName }} ./Dockerfile .
+          docker build -t ${{ inputs.dockerImageName }} -f ./Dockerfile .
 
       - name: Save Docker Image as Tarball
         run: |
