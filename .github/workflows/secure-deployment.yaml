@@ -3,6 +3,8 @@ name: Secure Deployment
 on: 
   workflow_call:
     secrets:
+      ADMIN_ACCESS_TOKEN:
+        required: true
       PRODUCTION_HOST_URL:
         required: true
       DB_USER:
@@ -14,6 +16,8 @@ on:
 jobs:
   owasp-zap-scan:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/owasp-zap.yaml@main
+    secrets: 
+      GITHUB_REPOSOTIRY_TOKEN: ${{ secrets.ADMIN_ACCESS_TOKEN }}
   secure-deployment:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/secure-deployment.yaml@main 
     secrets:
