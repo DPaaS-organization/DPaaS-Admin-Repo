@@ -8,7 +8,7 @@ jobs:
   # Performs an OWASP ZAP scan. This is a dynamic test of a fully running application.
   # Firstly the application must be started in a Docker environment.
   zap_scan:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     name: DAST Webapp scan
     steps:
     # Check out source code from the repository.
@@ -16,13 +16,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         ref: main
-
-    # Pull the latest version of the Docker image and start it in detached mode. 
-    # Detached mode means another task can be executed simultaniously
-    - name: Run Juice Shop image
-      run: | 
-        docker pull bkimminich/juice-shop  # Pull the Juice Shop image
-        docker run -p 3000:3000 --detach bkimminich/juice-shop  # Run the image in detached mode
 
     # OWASP ZAP scan is executed on the Docker environment.
     # @ADMIN_ACCESS_TOKEN: A token specific to a GitHub repository. This specifies in which project
