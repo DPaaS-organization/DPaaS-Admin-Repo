@@ -3,7 +3,6 @@ name: Secure Deployment
 on: 
   workflow_call:
     secrets:
-
       PRODUCTION_HOST_URL:
         required: true
       DB_USER:
@@ -12,9 +11,15 @@ on:
         required: true
       DB_HOST_URL:
         required: true
+    inputs:
+      dockerImageName:
+        required: true
+        type: string
 jobs:
   deploy-to-test:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/deploy-to-test.yaml@main
+    with:
+      ${{ inputs.dockerImageName }}
   owasp-zap-scan:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/owasp-zap.yaml@main
   secure-deployment:
