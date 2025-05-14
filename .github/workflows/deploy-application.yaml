@@ -1,0 +1,24 @@
+name: Deploy Application to production environment
+
+on:
+  workflow_call:
+    secrets:
+      PRODUCTION_HOST_URL:
+        required: true
+      DB_USER:
+        required: true
+      DB_PASSWORD:
+        required: true
+      DB_HOST_URL:
+        required: true
+        
+jobs:
+  deploy-application:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Mock
+        run: |
+          echo "PRODUCTION_HOST_URL: ${{ secrets.PRODUCTION_HOST_URL }}"
+          echo "DB_USER: ${{ secrets.DB_USER }}"
+          echo "DB_PASSWORD: ${{ secrets.DB_PASSWORD }}"
+          echo "DB_HOST_URL: ${{ secrets.DB_HOST_URL }}"
