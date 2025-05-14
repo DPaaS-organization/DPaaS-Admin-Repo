@@ -3,7 +3,7 @@ name: OWASP ZAP Scan
 on: 
   workflow_call:
     secrets:
-      GITHUB_REPOSOTIRY_TOKEN:
+      ADMIN_ACCESS_TOKEN:
         required: true
 
 jobs:
@@ -27,12 +27,12 @@ jobs:
         docker run -p 3000:3000 --detach bkimminich/juice-shop  # Run the image in detached mode
 
     # OWASP ZAP scan is executed on the Docker environment.
-    # @GITHUB_REPOSOTIRY_TOKEN: A token specific to a GitHub repository. This specifies in which project
+    # @ADMIN_ACCESS_TOKEN: A token specific to a GitHub repository. This specifies in which project
     # the issues are uploaded.
     - name: ZAP SCAN
       uses: zaproxy/action-full-scan@v0.12.0
       with:
-        token: ${{ secrets.GITHUB_REPOSOTIRY_TOKEN }}  # Token for GitHub authentication
+        token: ${{ secrets.ADMIN_ACCESS_TOKEN }}  # Token for GitHub authentication
         docker_name: 'ghcr.io/zaproxy/zaproxy:stable'  # Docker image for ZAP
         target: 'http://localhost:3000'  # Target URL for the scan
         rules_file_name: '.zap/rules.tsv'  # Custom rules for the scan
