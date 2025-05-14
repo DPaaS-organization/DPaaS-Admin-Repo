@@ -19,8 +19,9 @@ jobs:
   deploy-to-test:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/deploy-to-test.yaml@main
     with:
-      ${{ inputs.dockerImageName }}
+      dockerImageName: ${{ inputs.dockerImageName }}
   owasp-zap-scan:
+    needs: deploy-to-test
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/owasp-zap.yaml@main
   secure-deployment:
     uses: DPaaS-organization/DPaaS-Admin-Repo/.github/workflows/deploy-application.yaml@main 
