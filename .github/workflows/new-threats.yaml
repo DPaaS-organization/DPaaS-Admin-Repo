@@ -7,14 +7,17 @@ on:
         description: 'CVE to test for'
         required: false
         default: 'null'
+        type: string
       vulnerablePackage:
         description: 'Packages affected by CVE'
         required: true
         default: 'null'
+        type: string
       packageVersions:
         description: 'Versions affected by CVE'
         required: true
         default: 'null'
+        type: string
 
 jobs:
   scan-for-cve:
