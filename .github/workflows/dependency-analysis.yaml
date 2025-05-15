@@ -276,7 +276,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # Use GitHub's token for authentication
         run: |
-          # Replace this with the actual output from the scan; keep it dynamic
           vulnerabilities=$(cat scan-results.json)
 
           if [ -z "$vulnerabilities" ]; then
