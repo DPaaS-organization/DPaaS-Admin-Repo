@@ -17,7 +17,7 @@ on:
         default: 'null'
 
 jobs:
-  download-sbom:
+  scan-for-cve:
     runs-on: self-hosted
 
     steps:
