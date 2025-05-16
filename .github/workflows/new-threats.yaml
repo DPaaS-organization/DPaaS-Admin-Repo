@@ -32,7 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download SBOM Artifact
+      - name: Download SBOM
         env:
           DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
           DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
@@ -42,8 +42,18 @@ jobs:
             -H "Content-Type: application/json" -o sbom.json -vv
 
 
-      - name: Install jq
-        run: sudo apt-get install jq
+      - name: Download jq binary
+        run: |
+          curl -L -o jq https://github.com/stedolan/jq/releases/latest/download/jq-linux64
+          chmod +x jq
+          mkdir -p $HOME/.local/bin
+          mv jq $HOME/.local/bin/
+
+      - name: Add jq to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify jq installation
+        run: jq --version
 
       - name: Check for Specific Package Version
         run: |
@@ -52,7 +62,7 @@ jobs:
 
           if jq -e ".components[] | select(.name == \"$PACKAGE_NAME\" and .version == \"$PACKAGE_VERSION\")" sbom.json > /dev/null; then
             echo "Package $PACKAGE_NAME version $PACKAGE_VERSION is present in the SBOM."
+            exit 1
           else
             echo "Package $PACKAGE_NAME version $PACKAGE_VERSION is NOT present in the SBOM."
-            exit 1
           fi
