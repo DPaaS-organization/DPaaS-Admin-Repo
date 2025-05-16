@@ -37,7 +37,7 @@ jobs:
           DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
           DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
         run: |
-          curl "http://localhost:8081/v1/bom/cyclonedx/project/$DTRACK_PROJECT_KEY/sbom" \
+          curl "http://localhost:8081/api/v1/component/project/$DTRACK_PROJECT_KEY/sbom" \
             -H "X-Api-Key: $DTRACK_API_KEY" \
             -H "Content-Type: application/json" -o sbom.json -vv
 
