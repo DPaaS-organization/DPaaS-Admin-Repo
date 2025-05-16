@@ -5,6 +5,8 @@ on:
     secrets:
       DTRACK_PROJECT_KEY:
         required: true
+      DTRACK_API_KEY:
+        required: true
     inputs:
       cveNumber:
         description: 'CVE to test for'
@@ -33,6 +35,7 @@ jobs:
       - name: Download SBOM Artifact
         env:
           DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
+          DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
         run: |
           curl "http://localhost:8081/api/v1/analysis/$DTRACK_PROJECT_KEY/sbom" \
             -H "X-Api-Key: $DTRACK_API_KEY" \
