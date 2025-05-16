@@ -39,7 +39,7 @@ jobs:
         run: |
           curl "http://localhost:8081/api/v1/analysis/$DTRACK_PROJECT_KEY/sbom" \
             -H "X-Api-Key: $DTRACK_API_KEY" \
-            -H "Content-Type: application/json" -o scan-results.json -vv
+            -H "Content-Type: application/json" -o sbom.json -vv
 
 
       - name: Install jq
