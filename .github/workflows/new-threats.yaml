@@ -2,6 +2,9 @@ name: New Threat workflow
 
 on:
   workflow_call:
+    secrets:
+      DTRACK_PROJECT_KEY:
+        required: true
     inputs:
       cveNumber:
         description: 'CVE to test for'
@@ -28,6 +31,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download SBOM Artifact
+        env:
+          DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
         run: |
           curl "http://localhost:8081/api/v1/analysis/$DTRACK_PROJECT_KEY/sbom" \
             -H "X-Api-Key: $DTRACK_API_KEY" \
