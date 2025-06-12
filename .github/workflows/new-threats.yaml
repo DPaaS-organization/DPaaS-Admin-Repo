@@ -1,7 +1,7 @@
 name: New Threat workflow
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       cveNumber:
         description: 'CVE to test for'
