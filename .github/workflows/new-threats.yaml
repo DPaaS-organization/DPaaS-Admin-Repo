@@ -2,16 +2,20 @@ name: New Threat workflow
 
 on:
   workflow_call:
+    secrets:
+      GH_TOKEN:
+        required: true
     inputs:
       cveNumber:
-        description: 'CVE to test for'
         required: true
+        type: string
       vulnerablePackage:
-        description: 'Package to check'
         required: true
+        type: string
       packageVersions:
-        description: 'Maximum vulnerable version (inclusive)'
         required: true
+        type: string
+
 
 jobs:
   scan-for-cve:
