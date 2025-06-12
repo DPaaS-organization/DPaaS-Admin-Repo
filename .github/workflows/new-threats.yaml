@@ -1,44 +1,25 @@
 name: New Threat workflow
 
 on:
-  workflow_call:
-    secrets:
-      DTRACK_PROJECT_KEY:
-        required: true
-      DTRACK_API_KEY:
-        required: true
-      GH_TOKEN:
-        required: true
+  workflow_dispatch:
     inputs:
       cveNumber:
         description: 'CVE to test for'
         required: true
-        type: string
       vulnerablePackage:
-        description: 'Packages affected by CVE'
+        description: 'Package to check'
         required: true
-        type: string
       packageVersions:
         description: 'Maximum vulnerable version (inclusive)'
         required: true
-        type: string
 
 jobs:
   scan-for-cve:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download SBOM
-        env:
-          DTRACK_PROJECT_KEY: ${{ secrets.DTRACK_PROJECT_KEY }}
-          DTRACK_API_KEY: ${{ secrets.DTRACK_API_KEY }}
-        run: |
-          curl "http://localhost:8080/api/v1/component/project/$DTRACK_PROJECT_KEY" \
-            -H "X-Api-Key: $DTRACK_API_KEY" \
-            -H "Content-Type: application/json" -o sbom.json -vv
 
       - name: Download jq binary
         run: |
@@ -59,26 +40,27 @@ jobs:
           PACKAGE="${{ inputs.vulnerablePackage }}"
           MAX_VERSION="${{ inputs.packageVersions }}"
 
-          # Function: compare version strings lexically (works for simple cases)
+          INSTALLED_VERSION=$(jq -r --arg PACKAGE "$PACKAGE" \
+            '(.dependencies[$PACKAGE] // .devDependencies[$PACKAGE])' package.json)
+
           version_le() {
             [ "$1" = "$2" ] && return 0
             [ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -n1)" = "$1" ]
           }
 
-          FOUND_VERSION=""
-          while read -r VERSION; do
-            if version_le "$VERSION" "$MAX_VERSION"; then
-              FOUND_VERSION="$VERSION"
-              break
+          if [ "$INSTALLED_VERSION" != "null" ]; then
+            # Remove ^, ~, >=, <=, >, < or = prefixes if present
+            CLEAN_VERSION=$(echo "$INSTALLED_VERSION" | sed 's/^[^0-9]*//')
+            if version_le "$CLEAN_VERSION" "$MAX_VERSION"; then
+              echo "Vulnerable version found: $CLEAN_VERSION"
+              echo "found_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "No vulnerable versions of $PACKAGE found."
+              echo "found_version=" >> $GITHUB_OUTPUT
             fi
-          done < <(jq -r --arg PACKAGE "$PACKAGE" '.components[] | select(.name == $PACKAGE) | .version' sbom.json)
-
-          if [ -n "$FOUND_VERSION" ]; then
-            echo "Vulnerable version found: $FOUND_VERSION"
-            echo "found_version=$FOUND_VERSION" >> $GITHUB_OUTPUT
-            exit 1
           else
-            echo "No vulnerable versions of $PACKAGE found."
+            echo "$PACKAGE not found in dependencies or devDependencies."
             echo "found_version=" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
@@ -90,7 +72,6 @@ jobs:
           CVE="${{ inputs.cveNumber }}"
           curl -s "https://services.nvd.nist.gov/rest/json/cve/1.0/$CVE" -o cve.json
           SUMMARY=$(jq -r '.result.CVE_Items[0].cve.description.description_data[0].value' cve.json)
-          # fallback text if NVD fails for some reason
           [ "$SUMMARY" = "null" ] && SUMMARY="No summary found for $CVE"
           echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
 
@@ -98,7 +79,7 @@ jobs:
         if: steps.check_vulnerable.outputs.found_version != ''
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const cve = '${{ inputs.cveNumber }}';
             const pkg = '${{ inputs.vulnerablePackage }}';
@@ -106,7 +87,7 @@ jobs:
             const summary = `${{ steps.cvedetails.outputs.summary }}`;
             const title = `[Security] ${pkg} vulnerable to ${cve} (found version: ${version})`;
             const body =
-              `**${pkg}** version **${version}** was found in the SBOM and is vulnerable to **${cve}**\n\n` +
+              `**${pkg}** version **${version}** was found in package.json and is vulnerable to **${cve}**\n\n` +
               `CVE summary:\n${summary}\n\n` +
               `[CVE link](https://nvd.nist.gov/vuln/detail/${cve})`;
             await github.rest.issues.create({
