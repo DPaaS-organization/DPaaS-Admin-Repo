@@ -7,26 +7,25 @@ on:
         required: true
       DTRACK_API_KEY:
         required: true
+      GH_TOKEN:
+        required: true
     inputs:
       cveNumber:
         description: 'CVE to test for'
-        required: false
-        default: 'null'
+        required: true
         type: string
       vulnerablePackage:
         description: 'Packages affected by CVE'
         required: true
-        default: 'null'
         type: string
       packageVersions:
-        description: 'Versions affected by CVE'
+        description: 'Maximum vulnerable version (inclusive)'
         required: true
-        default: 'null'
         type: string
 
 jobs:
   scan-for-cve:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -41,7 +40,6 @@ jobs:
             -H "X-Api-Key: $DTRACK_API_KEY" \
             -H "Content-Type: application/json" -o sbom.json -vv
 
-
       - name: Download jq binary
         run: |
           curl -L -o jq https://github.com/stedolan/jq/releases/latest/download/jq-linux64
@@ -55,14 +53,66 @@ jobs:
       - name: Verify jq installation
         run: jq --version
 
-      - name: Check for Specific Package Version
+      - name: Find vulnerable package version(s)
+        id: check_vulnerable
         run: |
-          PACKAGE_NAME=${{ github.event.inputs.vulnerablePackage }} 
-          PACKAGE_VERSION=${{ github.event.inputs.packageVersions }} 
+          PACKAGE="${{ inputs.vulnerablePackage }}"
+          MAX_VERSION="${{ inputs.packageVersions }}"
 
-          if jq -e ".components[] | select(.name == \"$PACKAGE_NAME\" and .version == \"$PACKAGE_VERSION\")" sbom.json > /dev/null; then
-            echo "Package $PACKAGE_NAME version $PACKAGE_VERSION is present in the SBOM."
+          # Function: compare version strings lexically (works for simple cases)
+          version_le() {
+            [ "$1" = "$2" ] && return 0
+            [ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -n1)" = "$1" ]
+          }
+
+          FOUND_VERSION=""
+          while read -r VERSION; do
+            if version_le "$VERSION" "$MAX_VERSION"; then
+              FOUND_VERSION="$VERSION"
+              break
+            fi
+          done < <(jq -r --arg PACKAGE "$PACKAGE" '.components[] | select(.name == $PACKAGE) | .version' sbom.json)
+
+          if [ -n "$FOUND_VERSION" ]; then
+            echo "Vulnerable version found: $FOUND_VERSION"
+            echo "found_version=$FOUND_VERSION" >> $GITHUB_OUTPUT
             exit 1
           else
-            echo "Package $PACKAGE_NAME version $PACKAGE_VERSION is NOT present in the SBOM."
+            echo "No vulnerable versions of $PACKAGE found."
+            echo "found_version=" >> $GITHUB_OUTPUT
           fi
+        continue-on-error: true
+
+      - name: Fetch CVE Details from NVD
+        id: cvedetails
+        if: steps.check_vulnerable.outputs.found_version != ''
+        run: |
+          CVE="${{ inputs.cveNumber }}"
+          curl -s "https://services.nvd.nist.gov/rest/json/cve/1.0/$CVE" -o cve.json
+          SUMMARY=$(jq -r '.result.CVE_Items[0].cve.description.description_data[0].value' cve.json)
+          # fallback text if NVD fails for some reason
+          [ "$SUMMARY" = "null" ] && SUMMARY="No summary found for $CVE"
+          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Issue if Vulnerable Version found
+        if: steps.check_vulnerable.outputs.found_version != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const cve = '${{ inputs.cveNumber }}';
+            const pkg = '${{ inputs.vulnerablePackage }}';
+            const version = '${{ steps.check_vulnerable.outputs.found_version }}';
+            const summary = `${{ steps.cvedetails.outputs.summary }}`;
+            const title = `[Security] ${pkg} vulnerable to ${cve} (found version: ${version})`;
+            const body =
+              `**${pkg}** version **${version}** was found in the SBOM and is vulnerable to **${cve}**\n\n` +
+              `CVE summary:\n${summary}\n\n` +
+              `[CVE link](https://nvd.nist.gov/vuln/detail/${cve})`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['security', 'vulnerability']
+            });
