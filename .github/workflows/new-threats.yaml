@@ -72,9 +72,20 @@ jobs:
       - name: Fetch CVE Details from NVD
         id: cvedetails
         if: steps.check_vulnerable.outputs.found_version != ''
+        shell: bash
         run: |
           CVE="${{ inputs.cveNumber }}"
           curl -s "https://services.nvd.nist.gov/rest/json/cve/1.0/$CVE" -o cve.json
+
+          # Robust json error checking
+          if ! jq . cve.json >/dev/null 2>&1; then
+            echo "Received invalid JSON from NVD API. Possible rate limit or error."
+            head cve.json
+            SUMMARY="No summary found for $CVE (fetch error)"
+            echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           SUMMARY=$(jq -r '.result.CVE_Items[0].cve.description.description_data[0].value' cve.json)
           [ "$SUMMARY" = "null" ] && SUMMARY="No summary found for $CVE"
           echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
